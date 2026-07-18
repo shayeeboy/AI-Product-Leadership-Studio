@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="Inter, Segoe UI, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 12px; fill: #64748b; }
+      .layer { font-size: 15px; font-weight: 700; }
+      .lyd { font-size: 11px; }
+      .box { font-size: 12px; font-weight: 600; fill: #1e293b; }
+      .boxd { font-size: 10px; fill: #64748b; }
+      .tag { font-size: 10px; font-weight: 600; fill: #ffffff; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="620" fill="#f8fafc"/>
+  <text x="32" y="42" class="title">AI Product &amp; Leadership Studio — Architecture</text>
+  <text x="32" y="62" class="sub">Three executive layers over three real execution engines, bound by a shared-services spine. Client-first; adapters preserve a live-API swap.</text>
+
+  <!-- Executive Layer -->
+  <rect x="32" y="86" width="836" height="70" rx="10" fill="#eef4ff" stroke="#c7d7fb"/>
+  <text x="52" y="112" class="layer" fill="#2244a8">Executive Layer</text>
+  <text x="52" y="130" class="lyd" fill="#475569">Dashboards · scorecards · narratives · drill-downs</text>
+  <g>
+    <rect x="360" y="98" width="150" height="46" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+    <text x="435" y="118" text-anchor="middle" class="box">Executive Dashboard</text>
+    <text x="435" y="133" text-anchor="middle" class="boxd">KPIs · exec summary</text>
+    <rect x="524" y="98" width="150" height="46" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+    <text x="599" y="118" text-anchor="middle" class="box">Cross-Product</text>
+    <text x="599" y="133" text-anchor="middle" class="boxd">Executive scorecard</text>
+    <rect x="688" y="98" width="160" height="46" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+    <text x="768" y="118" text-anchor="middle" class="box">Evaluation Dashboard</text>
+    <text x="768" y="133" text-anchor="middle" class="boxd">Pass/fail vs thresholds</text>
+  </g>
+
+  <!-- Governance Layer -->
+  <rect x="32" y="166" width="836" height="70" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="52" y="192" class="layer" fill="#15803d">Governance Layer</text>
+  <text x="52" y="210" class="lyd" fill="#475569">Registration · risk · Responsible AI · human approval · audit</text>
+  <g>
+    <rect x="360" y="178" width="150" height="46" rx="8" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="435" y="198" text-anchor="middle" class="box">Portfolio Governance</text>
+    <text x="435" y="213" text-anchor="middle" class="boxd">12-product registry</text>
+    <rect x="524" y="178" width="150" height="46" rx="8" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="599" y="198" text-anchor="middle" class="box">Responsible AI Center</text>
+    <text x="599" y="213" text-anchor="middle" class="boxd">Governance office</text>
+    <rect x="688" y="178" width="160" height="46" rx="8" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="768" y="198" text-anchor="middle" class="box">Human Approval Center</text>
+    <text x="768" y="213" text-anchor="middle" class="boxd">Decision inbox</text>
+  </g>
+
+  <!-- Decision Layer -->
+  <rect x="32" y="246" width="836" height="70" rx="10" fill="#fefce8" stroke="#fde68a"/>
+  <text x="52" y="272" class="layer" fill="#a16207">Decision Layer</text>
+  <text x="52" y="290" class="lyd" fill="#475569">Opportunity · build-vs-buy · cost · ROI · prioritization · maturity</text>
+  <g>
+    <rect x="360" y="258" width="118" height="46" rx="8" fill="#ffffff" stroke="#fde68a"/>
+    <text x="419" y="278" text-anchor="middle" class="box">Opportunity</text>
+    <text x="419" y="293" text-anchor="middle" class="boxd">weighted score</text>
+    <rect x="486" y="258" width="118" height="46" rx="8" fill="#ffffff" stroke="#fde68a"/>
+    <text x="545" y="278" text-anchor="middle" class="box">Build vs Buy</text>
+    <text x="545" y="293" text-anchor="middle" class="boxd">decision engine</text>
+    <rect x="612" y="258" width="110" height="46" rx="8" fill="#ffffff" stroke="#fde68a"/>
+    <text x="667" y="278" text-anchor="middle" class="box">Cost / ROI</text>
+    <text x="667" y="293" text-anchor="middle" class="boxd">what-if sims</text>
+    <rect x="730" y="258" width="118" height="46" rx="8" fill="#ffffff" stroke="#fde68a"/>
+    <text x="789" y="278" text-anchor="middle" class="box">Prioritization</text>
+    <text x="789" y="293" text-anchor="middle" class="boxd">RICE · WSJF</text>
+  </g>
+
+  <!-- Product adapters -->
+  <text x="32" y="350" class="layer" fill="#334155">Product Adapters</text>
+  <text x="32" y="368" class="sub">typed clients · common schema · never inline fixtures</text>
+  <g>
+    <rect x="32" y="380" width="266" height="72" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="32" y="380" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="44" y="395" class="tag">AI Native Diagnostic Adapter</text>
+    <text x="48" y="422" class="box">ReadinessSnapshot</text>
+    <text x="48" y="440" class="boxd">team maturity · capability radar · risk indicators</text>
+
+    <rect x="317" y="380" width="266" height="72" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="317" y="380" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="329" y="395" class="tag">Enterprise RAG Adapter</text>
+    <text x="333" y="422" class="box">RagHealthSnapshot</text>
+    <text x="333" y="440" class="boxd">groundedness · citations · eval metrics · latency</text>
+
+    <rect x="602" y="380" width="266" height="72" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="602" y="380" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="614" y="395" class="tag">Financial Intelligence Adapter</text>
+    <text x="618" y="422" class="box">FinancialIntelligenceSnapshot</text>
+    <text x="618" y="440" class="boxd">scenarios · NPV · payback · decision traces</text>
+  </g>
+
+  <!-- arrows layers -> adapters -->
+  <path d="M435 316 L435 380" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M545 316 L450 380" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="150" y="336" class="boxd" fill="#94a3b8">layers read via adapters + shared services →</text>
+
+  <!-- Shared services -->
+  <rect x="32" y="474" width="836" height="60" rx="10" fill="#0f172a"/>
+  <text x="52" y="500" class="layer" fill="#ffffff">Shared Services</text>
+  <text x="52" y="518" class="lyd" fill="#94a3b8">Evaluation · Observability · Governance workflow engine · Tracing · Cost</text>
+  <g fill="#1e293b">
+    <rect x="360" y="486" width="115" height="36" rx="8" stroke="#334155"/>
+    <rect x="481" y="486" width="115" height="36" rx="8" stroke="#334155"/>
+    <rect x="602" y="486" width="130" height="36" rx="8" stroke="#334155"/>
+    <rect x="738" y="486" width="110" height="36" rx="8" stroke="#334155"/>
+  </g>
+  <text x="417" y="508" text-anchor="middle" class="tag">Evaluation</text>
+  <text x="538" y="508" text-anchor="middle" class="tag">Observability</text>
+  <text x="667" y="508" text-anchor="middle" class="tag">Workflow engine</text>
+  <text x="793" y="508" text-anchor="middle" class="tag">Cost · Tracing</text>
+
+  <!-- Deployment footer -->
+  <rect x="32" y="552" width="836" height="44" rx="10" fill="#eef4ff" stroke="#c7d7fb"/>
+  <text x="52" y="571" class="box" fill="#2244a8">Deployment (client-first)</text>
+  <text x="52" y="587" class="boxd">Static Vite bundle → GitHub Pages · $0 hosting · seed data bundled · Node API + Neon are an optional roadmap upgrade behind the same adapter contract</text>
+</svg>
