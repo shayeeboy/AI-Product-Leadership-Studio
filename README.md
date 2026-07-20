@@ -100,6 +100,28 @@ npm run preview      # serve the built bundle
 
 No `.env`, no database, no keys. See [`.env.example`](.env.example) for the *optional* live-API upgrade.
 
+### Repository structure
+
+```
+AI-Product-Leadership-Studio/
+├── index.html · vite.config.ts · tailwind.config.js · tsconfig.json
+├── src/
+│   ├── modules/                 ← the 13 feature modules + Product Detail
+│   ├── shared/governance/       ← reusable workflow engine (store.ts, WorkflowTimeline.tsx)
+│   ├── adapters/                ← typed getSnapshot/getHistory/listProducts contract
+│   ├── seed/                    ← products · snapshots · governance fixtures (12-product portfolio)
+│   ├── types/domain.ts          ← the common schema adapters return
+│   └── lib/status.ts            ← status vocabulary
+├── assets/                      ← architecture.svg · workflow.svg
+├── docs/                        ← REVISED-BUILD-BRIEF.md · PLAN.md
+├── .github/workflows/deploy-web.yml   ← Pages via Actions
+├── LICENSE
+└── .git_prompts/                ← reverse-engineered reproducibility prompts (see its README)
+    ├── phases/                  ← one prompt per historical dev phase (01-02)
+    ├── sessions/                ← one prompt per going-forward work session
+    └── MASTER_REVERSE_ENGINEER_PROMPT.md   ← git-ignored (sensitive, local only)
+```
+
 ### Demo script
 
 1. **Executive Dashboard** — portfolio health is *At Risk · 40%*; 10 active products, $45.4K/mo, blended ROI. Read the auto-generated executive summary: two over-budget pilots + a blocked HR bot.
