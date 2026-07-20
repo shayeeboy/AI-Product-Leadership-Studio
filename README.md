@@ -8,6 +8,17 @@ The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shay
 
 ---
 
+## See it live
+
+**🎛️ [Open the AI Product & Leadership Studio → shayeeboy.github.io/AI-Product-Leadership-Studio](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)**
+
+A static **React 18 / Vite 5** app on GitHub Pages — **13 executive modules** over three
+seeded AI products (the portfolio's other three tools), with charts and decision support
+on every screen. No sign-up, no cost, **$0/month**. Walk the [demo script](#demo-script)
+end-to-end and, at each screen, answer *"so what should I decide?"*
+
+---
+
 ## Executive summary
 
 | | |
@@ -30,10 +41,10 @@ The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shay
 
 ---
 
-## See it live
+## Run it locally &amp; deploy
 
 - **Local:** `npm install && npm run dev` → the dev server prints a `…/AI-Product-Leadership-Studio/` URL.
-- **Hosted:** once Pages is enabled (owner: *Settings → Pages → Source: GitHub Actions*), the committed workflow publishes to `https://shayeeboy.github.io/AI-Product-Leadership-Studio/`.
+- **Hosted (live):** GitHub Pages is enabled (*Settings → Pages → Source: GitHub Actions*); the committed workflow auto-publishes every push to `main` to **[the live site above](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)**.
 
 ---
 
