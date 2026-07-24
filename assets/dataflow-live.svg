@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Inter, Segoe UI, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 12px; fill: #64748b; }
+      .step { font-size: 12px; font-weight: 600; fill: #0f172a; }
+      .stepd { font-size: 10px; fill: #64748b; }
+      .num { font-size: 12px; font-weight: 700; fill: #ffffff; }
+      .note { font-size: 11px; fill: #475569; }
+      .mono { font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; fill: #334155; }
+    </style>
+    <marker id="af" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 z" fill="#3b6fed"/>
+    </marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+  <rect width="900" height="560" fill="#f8fafc"/>
+  <text x="32" y="40" class="title">Live Dataflow</text>
+  <text x="32" y="60" class="sub">How a registered product becomes a live panel — and how governance writes persist. Provenance is preserved end-to-end; nothing is faked.</text>
+
+  <!-- Read path (top row) -->
+  <text x="32" y="92" class="note" font-weight="700" fill="#2244a8">Read path — render a product live</text>
+
+  <g>
+    <!-- 1 Registry -->
+    <rect x="32" y="104" width="150" height="64" rx="10" fill="#ffffff" stroke="#c7d7fb"/>
+    <circle cx="52" cy="124" r="11" fill="#3b6fed"/><text x="52" y="128" text-anchor="middle" class="num">1</text>
+    <text x="70" y="122" class="step">Registration</text>
+    <text x="44" y="146" class="stepd">name + owner +</text>
+    <text x="44" y="158" class="stepd">adapterType + endpoint</text>
+
+    <!-- 2 dispatch -->
+    <rect x="214" y="104" width="150" height="64" rx="10" fill="#ffffff" stroke="#c7d7fb"/>
+    <circle cx="234" cy="124" r="11" fill="#3b6fed"/><text x="234" y="128" text-anchor="middle" class="num">2</text>
+    <text x="252" y="122" class="step">fetchLive()</text>
+    <text x="226" y="146" class="stepd">dispatch by type,</text>
+    <text x="226" y="158" class="stepd">12s timeout, abort</text>
+
+    <!-- 3 source -->
+    <rect x="396" y="104" width="160" height="64" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="416" cy="124" r="11" fill="#3b6fed"/><text x="416" y="128" text-anchor="middle" class="num">3</text>
+    <text x="434" y="122" class="step">Source endpoint</text>
+    <text x="408" y="146" class="stepd">Render · Cloud Run ·</text>
+    <text x="408" y="158" class="stepd">Pages (CORS check)</text>
+
+    <!-- 4 normalize -->
+    <rect x="588" y="104" width="140" height="64" rx="10" fill="#ffffff" stroke="#c7d7fb"/>
+    <circle cx="608" cy="124" r="11" fill="#3b6fed"/><text x="608" y="128" text-anchor="middle" class="num">4</text>
+    <text x="626" y="122" class="step">LiveResult</text>
+    <text x="600" y="146" class="stepd">ok · reachable ·</text>
+    <text x="600" y="158" class="stepd">latency · fetchedAt</text>
+
+    <!-- 5 panel -->
+    <rect x="760" y="104" width="108" height="64" rx="10" fill="#ffffff" stroke="#c7d7fb"/>
+    <circle cx="780" cy="124" r="11" fill="#3b6fed"/><text x="780" y="128" text-anchor="middle" class="num">5</text>
+    <text x="798" y="122" class="step">Panel</text>
+    <text x="772" y="146" class="stepd">+ Live badge</text>
+    <text x="772" y="158" class="stepd">or down-state</text>
+  </g>
+  <g stroke="#3b6fed" stroke-width="2" fill="none">
+    <path d="M182 136 L210 136" marker-end="url(#af)"/>
+    <path d="M364 136 L392 136" marker-end="url(#af)"/>
+    <path d="M556 136 L584 136" marker-end="url(#af)"/>
+    <path d="M728 136 L756 136" marker-end="url(#af)"/>
+  </g>
+
+  <!-- Adapter types -->
+  <rect x="32" y="196" width="836" height="86" rx="10" fill="#eef4ff" stroke="#c7d7fb"/>
+  <text x="52" y="218" class="note" font-weight="700" fill="#2244a8">Adapter type → panel rendered from the real snapshot</text>
+  <text x="52" y="240" class="mono">readiness      → capability radar · maturity/readiness scores · risk indicators   (honest empty-state at 0 sessions)</text>
+  <text x="52" y="256" class="mono">rag-health     → grounded rate · p50/p95 latency · cost/query · query volume · eval-metric bars</text>
+  <text x="52" y="272" class="mono">financial      → real economic indicators (+ sparklines) · strategy recommendations · decision traces</text>
+
+  <!-- Provenance states -->
+  <text x="32" y="316" class="note" font-weight="700" fill="#334155">Provenance states (never a fabricated number)</text>
+  <g font-size="11">
+    <rect x="32" y="326" width="150" height="30" rx="8" fill="#ecfdf5" stroke="#a7f3d0"/><circle cx="48" cy="341" r="5" fill="#16a34a"/><text x="60" y="345" fill="#15803d">Live · &lt;latency&gt;ms</text>
+    <rect x="196" y="326" width="180" height="30" rx="8" fill="#fffbeb" stroke="#fde68a"/><circle cx="212" cy="341" r="5" fill="#d97706"/><text x="224" y="345" fill="#a16207">Reachable · HTTP error</text>
+    <rect x="390" y="326" width="180" height="30" rx="8" fill="#fef2f2" stroke="#fecaca"/><circle cx="406" cy="341" r="5" fill="#dc2626"/><text x="418" y="345" fill="#b91c1c">Unreachable · timeout</text>
+    <rect x="584" y="326" width="180" height="30" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/><circle cx="600" cy="341" r="5" fill="#94a3b8"/><text x="612" y="345" fill="#475569">No source / no data</text>
+  </g>
+
+  <!-- Write path -->
+  <text x="32" y="396" class="note" font-weight="700" fill="#15803d">Write path — governance actions persist</text>
+  <g>
+    <rect x="32" y="408" width="176" height="60" rx="10" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="120" y="432" text-anchor="middle" class="step">Register / Approve /</text>
+    <text x="120" y="448" text-anchor="middle" class="step">Advance stage</text>
+
+    <rect x="264" y="408" width="200" height="60" rx="10" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="364" y="430" text-anchor="middle" class="step">persistence client</text>
+    <text x="364" y="450" text-anchor="middle" class="stepd">VITE_PERSISTENCE_API ? backend : localStorage</text>
+
+    <rect x="520" y="396" width="160" height="40" rx="8" fill="#0f172a"/>
+    <text x="600" y="421" text-anchor="middle" class="num">Worker + Neon</text>
+    <rect x="520" y="442" width="160" height="34" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="600" y="464" text-anchor="middle" class="step">localStorage</text>
+
+    <rect x="716" y="408" width="152" height="60" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="792" y="432" text-anchor="middle" class="step">Workflow timeline</text>
+    <text x="792" y="450" text-anchor="middle" class="stepd">+ audit trail update</text>
+  </g>
+  <g stroke="#16a34a" stroke-width="2" fill="none">
+    <path d="M208 438 L262 438" marker-end="url(#ag)"/>
+    <path d="M464 438 L518 438" marker-end="url(#ag)"/>
+    <path d="M680 438 L714 438" marker-end="url(#ag)"/>
+  </g>
+
+  <text x="32" y="506" class="stepd">Reads use React Query (per-product cache, 1-min freshness, retry-once for cold starts). Writes reload state so every view reflects the change.</text>
+  <text x="32" y="522" class="stepd">The three source apps allow the Studio's Pages origin via CORS, so integration is fully client-side — no proxy, $0 hosting.</text>
+</svg>

@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" font-family="Inter, Segoe UI, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 12px; fill: #64748b; }
+      .lyr { font-size: 14px; font-weight: 700; }
+      .box { font-size: 12px; font-weight: 600; fill: #1e293b; }
+      .boxd { font-size: 10px; fill: #64748b; }
+      .tag { font-size: 10px; font-weight: 600; fill: #ffffff; }
+      .mono { font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; fill: #334155; }
+    </style>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect width="900" height="640" fill="#f8fafc"/>
+  <text x="32" y="40" class="title">Live Studio — Architecture (Phase 2)</text>
+  <text x="32" y="60" class="sub">Registry-driven, client-first. The browser reads each product's real snapshot endpoint directly (CORS for the Pages origin — no proxy). No seeded values.</text>
+
+  <!-- Browser / Studio -->
+  <rect x="32" y="82" width="836" height="118" rx="12" fill="#eef4ff" stroke="#c7d7fb"/>
+  <text x="52" y="106" class="lyr" fill="#2244a8">Live Studio (static React/Vite on GitHub Pages)</text>
+  <text x="52" y="124" class="boxd">origin https://shayeeboy.github.io — build: VITE_DATA_MODE unset → live · seeded build → /seeded/</text>
+
+  <rect x="52" y="136" width="180" height="52" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+  <text x="142" y="157" text-anchor="middle" class="box">Registry</text>
+  <text x="142" y="173" text-anchor="middle" class="boxd">3 default + registered</text>
+
+  <rect x="246" y="136" width="210" height="52" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+  <text x="351" y="157" text-anchor="middle" class="box">Live views</text>
+  <text x="351" y="173" text-anchor="middle" class="boxd">Portfolio · Detail · Cross-Product · Governance</text>
+
+  <rect x="470" y="136" width="180" height="52" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+  <text x="560" y="157" text-anchor="middle" class="box">Live adapters</text>
+  <text x="560" y="173" text-anchor="middle" class="boxd">dispatch by type + timeout</text>
+
+  <rect x="664" y="136" width="186" height="52" rx="8" fill="#ffffff" stroke="#c7d7fb"/>
+  <text x="757" y="157" text-anchor="middle" class="box">Register-a-product</text>
+  <text x="757" y="173" text-anchor="middle" class="boxd">bind type + endpoint</text>
+
+  <!-- arrows to sources -->
+  <path d="M300 200 L300 250" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M470 200 L470 250" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M640 200 L640 250" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+  <text x="360" y="228" class="boxd" fill="#94a3b8">live fetch (CORS: Pages origin) →</text>
+
+  <!-- Enriched source endpoints -->
+  <text x="32" y="272" class="lyr" fill="#334155">Enriched source apps (real snapshot endpoints)</text>
+  <g>
+    <rect x="32" y="284" width="266" height="96" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="32" y="284" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="44" y="299" class="tag">AI-Native Diagnostic · Render</text>
+    <text x="44" y="324" class="mono">GET /api/snapshot</text>
+    <text x="44" y="342" class="boxd">aggregates real sessions → ReadinessSnapshot</text>
+    <text x="44" y="360" class="boxd">capability radar · maturity (empty until</text>
+    <text x="44" y="373" class="boxd">assessments exist)</text>
+
+    <rect x="317" y="284" width="266" height="96" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="317" y="284" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="329" y="299" class="tag">Enterprise RAG · Cloud Run</text>
+    <text x="329" y="324" class="mono">GET /snapshot</text>
+    <text x="329" y="342" class="boxd">live /stats observability + eval summary</text>
+    <text x="329" y="360" class="boxd">grounded rate · p50/p95 · cost/query ·</text>
+    <text x="329" y="373" class="boxd">query volume · eval metrics</text>
+
+    <rect x="602" y="284" width="266" height="96" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="602" y="284" width="266" height="22" rx="10" fill="#334155"/>
+    <text x="614" y="299" class="tag">Financial Intelligence · Pages</text>
+    <text x="614" y="324" class="mono">studio-snapshot.json</text>
+    <text x="614" y="342" class="boxd">8 real StatCan / CMHC / BoC indicators</text>
+    <text x="614" y="360" class="boxd">+ brief recommendations, decision traces</text>
+    <text x="614" y="373" class="boxd">(CORS *)</text>
+  </g>
+
+  <!-- Persistence -->
+  <text x="32" y="416" class="lyr" fill="#334155">Persistence (R1)</text>
+  <rect x="32" y="428" width="410" height="92" rx="10" fill="#0f172a"/>
+  <text x="52" y="452" class="lyr" fill="#ffffff" font-size="12">Shared — when VITE_PERSISTENCE_API set</text>
+  <rect x="52" y="462" width="170" height="42" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="137" y="480" text-anchor="middle" class="tag">Cloudflare Worker</text>
+  <text x="137" y="495" text-anchor="middle" class="boxd" fill="#94a3b8">/api/registrations · state</text>
+  <rect x="236" y="462" width="186" height="42" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="329" y="480" text-anchor="middle" class="tag">Neon Postgres</text>
+  <text x="329" y="495" text-anchor="middle" class="boxd" fill="#94a3b8">registrations · assessments · audit</text>
+
+  <rect x="458" y="428" width="410" height="92" rx="10" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="478" y="452" class="lyr" fill="#475569" font-size="12">Fallback — no backend configured</text>
+  <rect x="478" y="462" width="370" height="42" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="663" y="480" text-anchor="middle" class="box">localStorage</text>
+  <text x="663" y="495" text-anchor="middle" class="boxd">$0, no accounts — per-browser registry + writes</text>
+
+  <path d="M351 380 L351 428" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)" transform="translate(-120,0)"/>
+  <text x="150" y="410" class="boxd" fill="#94a3b8">governance writes ↓</text>
+
+  <!-- Retained seeded -->
+  <rect x="32" y="536" width="836" height="72" rx="10" fill="#fefce8" stroke="#fde68a"/>
+  <text x="52" y="558" class="lyr" fill="#a16207" font-size="13">Retained phase-1 seeded demo — /seeded/</text>
+  <text x="52" y="577" class="boxd">Same codebase, VITE_DATA_MODE=seeded: full 13 executive modules over a seeded 12-product portfolio.</text>
+  <text x="52" y="592" class="boxd">Built to dist/seeded/ by the same Pages workflow (npm run build:all). Tag v1-seeded. Demonstrates the executive-platform breadth end-to-end.</text>
+</svg>
