@@ -4,7 +4,7 @@
 
 ![status](https://img.shields.io/badge/build-passing-brightgreen) ![stack](https://img.shields.io/badge/React%2018-Vite%205-blue) ![hosting](https://img.shields.io/badge/GitHub%20Pages-%240%2Fmo-success) ![license](https://img.shields.io/badge/license-MIT-black)
 
-The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shayeeboy), whose first three projects are real execution engines — the [AI-Native Diagnostic](https://github.com/shayeeboy/ai-native-diagnostic), [Enterprise RAG Assistant](https://github.com/shayeeboy/Enterprise-RAG-Assistant) and [Financial Intelligence Strategy Agent](https://github.com/shayeeboy/Financial-Intelligence-Strategy-Agent). Rather than rebuild them, the Studio **consumes their outputs** through typed adapters and adds the executive layer they lack: opportunity scoring, build-vs-buy, governance, scorecards, responsible-AI ops, cost/ROI, prioritization and maturity.
+The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shayeeboy), whose first three projects are real execution engines — the [AI-Native Diagnostic](https://github.com/shayeeboy/ai-native-diagnostic), [Enterprise RAG Assistant](https://github.com/shayeeboy/Enterprise-RAG-Assistant) and [Financial Intelligence Strategy Agent](https://github.com/shayeeboy/Financial-Intelligence-Strategy-Agent). Rather than rebuild them, the Studio **integrates them live** — reading each app's real snapshot endpoint through typed adapters — and adds the executive layer they lack: opportunity scoring, build-vs-buy, governance, scorecards, responsible-AI ops, cost/ROI, prioritization and maturity. A retained seeded demo shows the full executive breadth across a 12-product portfolio.
 
 ---
 
@@ -39,10 +39,11 @@ To make the apps *live and rich*, each was enriched to emit a machine-readable s
 
 **R1 persistence** — registrations, opportunity assessments, workflow state and the audit trail
 persist to a **Cloudflare Worker + Neon** backend when `VITE_PERSISTENCE_API` is set (shared across
-devices), and to **localStorage** otherwise ($0, no accounts). Deploy runbook: [`docs/PERSISTENCE.md`](docs/PERSISTENCE.md).
+devices), and to **localStorage** otherwise ($0, no accounts). The backend is **deployed and the live
+site uses it** (shared Neon persistence); deploy runbook: [`docs/PERSISTENCE.md`](docs/PERSISTENCE.md).
 
-Both **R1 and R2 shipped 2026-07-23** — all three source endpoints are deployed and the live copy
-is verified pulling real data in production (see [roadmap](#improvement-roadmap)).
+**R2 shipped 2026-07-23; R1 deployed 2026-07-24** — all three source endpoints are live and the
+Studio is verified pulling real data (and persisting writes) in production (see [roadmap](#improvement-roadmap)).
 
 ### Live architecture
 
@@ -60,10 +61,10 @@ is verified pulling real data in production (see [roadmap](#improvement-roadmap)
 |---|---|
 | **Problem** | Enterprises run *many* AI products at once, but the judgment work — which to fund, which to govern, which to kill, what it costs, whether it's safe — happens in scattered decks and spreadsheets. There's no single operating surface for the portfolio. |
 | **User** | Senior/Principal PM, Director of Product, Head of AI Product, or AI Strategy leader running an enterprise AI portfolio — plus the governance, finance and risk partners they review with. |
-| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio, with storytelling and decision support on every screen. |
+| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio. The **live copy** does this over the three real, shipped apps — integrated live from their own endpoints, with a Register-a-product flow for future ones; the **seeded demo** shows the full executive breadth across a 12-product portfolio. |
 | **Enterprise applicability** | The three-layer model (Executive / Governance / Decision) over adapters + shared services mirrors how a real platform team structures a multi-tenant internal tool. Any real AI product plugs in by exposing one snapshot endpoint and registering it — as the three real apps and the Register-a-product flow demonstrate live. |
-| **Success metric** | A reviewer can walk the [demo script](#demo-script) end-to-end and, at each screen, answer *"so what should I decide?"* — with interactive inputs that change outputs, not static mockups. |
-| **Acceptance criteria** | All 13 modules live and routable · 3 adapters serving §5 schemas · one governance engine reused in 3 modules · every KPI charted · 3 modules genuinely interactive · Responsible AI Center complete · no inline cross-module data · static build deploys to Pages. Full checklist in [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
+| **Success metric** | **Live:** a reviewer sees real data flowing from three shipped AI products (RAG eval + observability, live economic indicators, diagnostic readiness), and can register a new product against its endpoint and watch it appear. **Seeded:** the same reviewer can walk the 13-module executive breadth and, at each screen, answer *"so what should I decide?"* — interactive inputs that change outputs, not static mockups. |
+| **Acceptance criteria** | **Live copy** — three real apps integrated live via their own snapshot endpoints · registry + Register-a-product flow · shared Neon persistence (localStorage fallback) · no seeded values, honest down-states. **Seeded demo** — all 13 modules routable · one governance engine reused across modules · every KPI charted · 3 modules genuinely interactive · Responsible AI Center complete. Both build static and deploy to Pages ($0). Seeded checklist: [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
 | **Key trade-off decisions** | See below. |
 
 ### Key trade-off decisions
@@ -175,7 +176,7 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 
 ## Lessons learned
 
-- **The infrastructure the brief asked for wasn't the infrastructure the product needed.** A VP-facing demo over *stable seed data* gains nothing from Cloud Run + Neon and loses the $0/zero-secrets property the rest of the portfolio is known for. The valuable part of the brief's backend story was the **adapter contract**, not the backend — so I kept the contract and dropped the servers.
+- **Match the infrastructure to the phase, not the brief.** Phase 1 — a demo over *stable seed data* — gained nothing from the brief's mandated Cloud Run + Neon, so it shipped fully static for $0 behind the adapter contract. Phase 2 — going live — then added exactly the infrastructure that earns its place (a real snapshot endpoint on each app + an optional Neon persistence Worker) **without touching a single module**, because the contract held. The lesson: let the contract absorb the change, and add servers only when the product actually needs them.
 - **Breadth is a feature for this audience.** A portfolio reviewer clicking into a dead "coming soon" stub reads as *unfinished*; a live-but-simpler screen reads as *scoped*. Shipping all 13 routes, honestly labeled, beat polishing five.
 - **A shared state machine is what makes ten screens feel like one platform.** The single moment the app stops looking like a mockup is when an approval in one module visibly changes an audit trail in another. That came from one Zustand store, not from any individual screen.
 - **`noUnusedLocals` + `tsc` caught the only real defect** (a stray import) before it ever ran — cheap, high-signal correctness for the time budget.
@@ -185,7 +186,7 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 ## Improvement roadmap
 
 **Shipped**
-- **R1 — Persistence backend. ✅ SHIPPED 2026-07-23.** Cloudflare Worker + Neon (`server/`) for the registry, assessments, workflow state and audit trail; localStorage fallback when no backend is configured. Runbook: [`docs/PERSISTENCE.md`](docs/PERSISTENCE.md). *(Backend is deploy-ready; localStorage is the live default until the Worker is deployed.)*
+- **R1 — Persistence backend. ✅ SHIPPED 2026-07-23 · DEPLOYED 2026-07-24.** Cloudflare Worker + Neon (`server/`) for the registry, assessments, workflow state and audit trail; localStorage fallback when no backend is configured. The Worker is live and the deployed site now uses **shared Neon persistence** (write round-trip verified). Runbook: [`docs/PERSISTENCE.md`](docs/PERSISTENCE.md).
 - **R2 — Live engine integration. ✅ SHIPPED 2026-07-23.** Each source app enriched to emit a real snapshot endpoint; the live copy is registry-driven and verified pulling real data in production (RAG 83% grounded / 76 queries, FI 179.55% debt-to-income + 8 indicators, Diagnostic live empty-state). Plus a Register-a-product flow for future apps.
 
 **Near-term**
@@ -203,6 +204,6 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 
 ## Positioning
 
-This reads as a coherent **AI Product Leadership platform**, not "three AI projects plus a dashboard." The three engines are real and already built; the Studio is the governance, decision and executive layer a Director/VP needs to run all of them — and future products — as a portfolio. It demonstrates product judgment, governance, investment decision-making and executive storytelling, not just implementation.
+This reads as a coherent **AI Product Leadership platform**, not "three AI projects plus a dashboard." The three engines are real, shipped, and now **integrated live** — the Studio reads each one's real snapshot endpoint and adds the governance, decision and executive layer a Director/VP needs to run all of them (and future products, via Register-a-product) as a portfolio. It demonstrates product judgment, governance, investment decision-making and executive storytelling — end to end, on real data — not just implementation.
 
 Build details and the full revised brief: [`docs/PLAN.md`](docs/PLAN.md) · [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md).
