@@ -194,11 +194,18 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 - **R4 — Tests.** Vitest + RTL for the scoring/rollup logic; a Playwright smoke suite over primary nav + one workflow per module.
 - **R9 — Refresh cadence.** Scheduled regeneration of the FI `studio-snapshot.json` and RAG `eval/summary.json` so the live snapshots track the latest source data automatically.
 
+**Phase 3 — full module parity, live (planned)** — bring every seeded module into the live copy on **Studio-managed data** (registration metadata + user-entered data persisted to R1 Neon), no further source-app changes. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
+- **R10 — Data-model foundation.** Extend registration fields + add persisted Neon entities (risks, policies, reviews, model cards, cost inputs, ROI scenarios, maturity scores, prioritization inputs) + client CRUD. Prerequisite for R12/R13.
+- **R11 — Decision modules live (Phase 3A).** Opportunity Assessment, Build vs Buy, Cost Analyzer, ROI Simulator, Investment Prioritization, Maturity — wired to persistence; anchored on real RAG cost/query + Diagnostic readiness where they slot in.
+- **R12 — Governance modules live (Phase 3B).** Portfolio Governance (real risk register + funding), Responsible AI Center (persisted policies/reviews/model cards), generalized Evaluation Dashboard.
+- **R13 — Executive rollups live (Phase 3C).** Executive Dashboard KPIs + full Cross-Product scorecard computed from live/persisted data; unavailable KPIs show "not reported."
+
 **Stretch**
 - **R5 — Optional live LLM assist** in Product Discovery (graceful template fallback with no key).
 - **R6 — Auth + multi-tenant** portfolios (per-org seed → per-org data).
 - **R7 — Export** board-ready PDF/deck from the Executive Dashboard and Cross-Product scorecard.
 - **R8 — Real observability** across all products (the RAG panel already shows live traces/latency/cost; extend to the others as their endpoints expose it).
+- **R14 — Deeper source enrichment (Phase 3D, later).** Real product telemetry — live cost/usage/adoption/reliability endpoints on the apps (or cloud-billing integration) and the product dependency graph — filling the "not reported" gaps R13 leaves. Deferred per the 2026-07-24 Studio-managed-first decision.
 
 ---
 
