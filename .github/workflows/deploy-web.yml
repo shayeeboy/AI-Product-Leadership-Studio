@@ -24,7 +24,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:all   # live app → dist/ ; retained seeded demo → dist/seeded/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

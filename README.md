@@ -10,12 +10,36 @@ The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shay
 
 ## See it live
 
-**🎛️ [Open the AI Product & Leadership Studio → shayeeboy.github.io/AI-Product-Leadership-Studio](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)**
+**🎛️ [Live Studio → shayeeboy.github.io/AI-Product-Leadership-Studio](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)** — the registry-driven portfolio, integrated **live** from the three real apps' own snapshot endpoints. No seeded values: a source that's down says so.
 
-A static **React 18 / Vite 5** app on GitHub Pages — **13 executive modules** over three
-seeded AI products (the portfolio's other three tools), with charts and decision support
-on every screen. No sign-up, no cost, **$0/month**. Walk the [demo script](#demo-script)
-end-to-end and, at each screen, answer *"so what should I decide?"*
+**🗂️ [Seeded demo → …/AI-Product-Leadership-Studio/seeded/](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/)** — the retained **phase-1** build: 13 executive modules over a full seeded 12-product portfolio, to demo the executive-platform breadth end-to-end.
+
+Both are static **React 18 / Vite 5** on GitHub Pages, **$0/month**. The live copy fetches
+each product's real snapshot directly from the browser (the source apps send CORS for the
+Pages origin — no proxy). Free-tier backends can cold-start, so a card may show "checking…"
+for a few seconds on first load.
+
+---
+
+## Phase 2 — Live integration (R1 + R2)
+
+The live copy is **registry-driven**: every product is a *registration* (name, owner, adapter
+type, and a live snapshot endpoint), and the Studio renders whatever each endpoint returns —
+never seeded numbers. The three real apps ship as **default registrations**; a **Register-a-product**
+flow adds any future app by pointing at its snapshot endpoint (it enters governance at the
+`Registered` stage). The full seeded 13-module Studio is retained separately at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/).
+
+To make the apps *live and rich*, each was enriched to emit a machine-readable snapshot:
+
+| App | Endpoint added | What the Studio renders live |
+|---|---|---|
+| [AI-Native Diagnostic](https://github.com/shayeeboy/ai-native-diagnostic) | `GET /api/snapshot` — aggregates real `sessions` into a `ReadinessSnapshot` | capability radar, maturity/readiness (honest empty-state until assessments exist) |
+| [Enterprise RAG Assistant](https://github.com/shayeeboy/Enterprise-RAG-Assistant) | `GET /snapshot` — live `/stats` observability + eval summary | grounded rate, p50/p95 latency, cost/query, query volume, eval metrics |
+| [Financial Intelligence](https://github.com/shayeeboy/Financial-Intelligence-Strategy-Agent) | published `studio-snapshot.json` | 8 real StatCan/CMHC/BoC indicators + strategy recommendations |
+
+**R1 persistence** — registrations, opportunity assessments, workflow state and the audit trail
+persist to a **Cloudflare Worker + Neon** backend when `VITE_PERSISTENCE_API` is set (shared across
+devices), and to **localStorage** otherwise ($0, no accounts). Deploy runbook: [`docs/PERSISTENCE.md`](docs/PERSISTENCE.md).
 
 ---
 
@@ -38,6 +62,7 @@ end-to-end and, at each screen, answer *"so what should I decide?"*
 3. **Breadth with honest depth.** All 13 routes ship live rather than 5 polished screens + 8 stubs. Depth is front-loaded on the executive/governance/decision modules that carry the story; Product Discovery uses templated assists (as the brief permits).
 4. **HashRouter over a `404.html` hack** for zero-config deep-linking on Pages.
 5. **`npm run build` (tsc + vite) is the green-gate now**; component/e2e tests are sequenced as Roadmap R4, not pretended.
+6. **Phase 2 pivot — enrich the sources, don't fake them.** Going live meant the source apps only exposed *operational health* (Diagnostic, RAG) + *real economic data* (FI), not rich per-product snapshots. Rather than mix seeded values into a "live" copy, each source app was **enriched to emit a real snapshot endpoint**, and the live copy shows only what those endpoints actually return — with an honest "unreachable / no data" state instead of a fabricated one. The full seeded demo lives on, untouched, at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/).
 
 ---
 
