@@ -25,6 +25,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:all   # live app → dist/ ; retained seeded demo → dist/seeded/
+        env:
+          # Set repo variable VITE_PERSISTENCE_API (Settings → Secrets and variables
+          # → Actions → Variables) to the deployed Worker URL to enable shared
+          # persistence. When unset, the app builds with localStorage (no change).
+          VITE_PERSISTENCE_API: ${{ vars.VITE_PERSISTENCE_API }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
