@@ -84,7 +84,13 @@ Maturity (persisted `maturity_score`, Diagnostic-seeded). Frontend-only; no back
 - **Acceptance:** creating an assessment persists and appears in Prioritization; a saved ROI
   scenario survives reload; no seeded numbers on any 3A screen.
 
-### R12 — Phase 3B: Governance modules live
+### R12 — Phase 3B: Governance modules live — ✅ Shipped 2026-07-31
+**Shipped:** `LivePortfolioGovernance` (registry + funding from registration + a persisted `risk`
+register → likelihood×impact heatmap), `LiveResponsibleAiCenter` (persisted `policy` / `review`
+[bias·privacy·security] / `model_card` [auto-seed from registry] + live audit), and
+`LiveEvaluationDashboard` (per-product live eval metrics where exposed). Human Approval Center was
+already live. Dependency graph deferred to R14. Frontend-only. Original plan below.
+
 - **Portfolio Governance:** registry + funding (registration) + a **real risk register** (entered,
   persisted) driving the risk heatmap; live workflow from R1. Dependency graph deferred to R14.
 - **Responsible AI Center:** policy library, review queues, model cards, compliance mapping as

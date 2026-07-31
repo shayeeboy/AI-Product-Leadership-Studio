@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge,
 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { LivePortfolio } from "./LivePortfolio";
@@ -11,6 +11,9 @@ import { LiveProductDetail } from "./LiveProductDetail";
 import { RegisterProduct } from "./RegisterProduct";
 import { CrossProductLive } from "./CrossProductLive";
 import { LiveGovernance } from "./LiveGovernance";
+import { LivePortfolioGovernance } from "./LivePortfolioGovernance";
+import { LiveResponsibleAiCenter } from "./LiveResponsibleAiCenter";
+import { LiveEvaluationDashboard } from "./LiveEvaluationDashboard";
 import { LiveOpportunityAssessment } from "./LiveOpportunityAssessment";
 import { LiveInvestmentPrioritization } from "./LiveInvestmentPrioritization";
 import { LiveRoiSimulator } from "./LiveRoiSimulator";
@@ -37,7 +40,15 @@ const NAV_GROUPS = [
       { to: "/maturity", label: "Maturity Assessment", icon: Radar, end: false },
     ],
   },
-  { layer: "Governance", items: [{ to: "/governance", label: "Governance & Approvals", icon: ShieldCheck, end: false }] },
+  {
+    layer: "Governance",
+    items: [
+      { to: "/portfolio-governance", label: "Portfolio Governance", icon: ShieldCheck, end: false },
+      { to: "/responsible-ai", label: "Responsible AI Center", icon: ClipboardList, end: false },
+      { to: "/governance", label: "Human Approval Center", icon: Inbox, end: false },
+      { to: "/evaluation", label: "Evaluation Dashboard", icon: Gauge, end: false },
+    ],
+  },
   { layer: "Products", items: [{ to: "/register", label: "Register a product", icon: PlusCircle, end: false }] },
 ];
 
@@ -123,6 +134,9 @@ export function LiveApp() {
                 <Route path="/register" element={<RegisterProduct />} />
                 <Route path="/cross" element={<CrossProductLive />} />
                 <Route path="/governance" element={<LiveGovernance />} />
+                <Route path="/portfolio-governance" element={<LivePortfolioGovernance />} />
+                <Route path="/responsible-ai" element={<LiveResponsibleAiCenter />} />
+                <Route path="/evaluation" element={<LiveEvaluationDashboard />} />
                 <Route path="/opportunity" element={<LiveOpportunityAssessment />} />
                 <Route path="/prioritization" element={<LiveInvestmentPrioritization />} />
                 <Route path="/build-vs-buy" element={<BuildVsBuy />} />
