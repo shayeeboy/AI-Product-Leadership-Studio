@@ -56,8 +56,12 @@ Everything a Phase 3 module shows resolves to one of these — otherwise it show
 
 ## Phases
 
-### R10 — Data-model foundation *(prerequisite for 3B/3C)*
+### R10 — Data-model foundation *(prerequisite for 3B/3C)* — ✅ Shipped 2026-07-31
 Extend the registry + backend so Studio-managed governance/decision data has a home.
+**Shipped:** implemented as a single generic `studio_entities` table (one table for all
+eight kinds — no per-entity migration) plus the extra registration columns; Worker entity
+CRUD + `/api/state` grouping; client `saveEntity`/`deleteEntity` with localStorage fallback;
+backend-row camelCase normalization. Verified round-tripping against Neon.
 - **Registration fields:** businessUnit, owner, sponsor, lifecycle, architecture, annualBudget,
   monthlySpend, roiTarget (extend the form + `registrations` table).
 - **New Neon entities** (extend `server/schema.sql` + Worker routes): `risks`, `policies`,
