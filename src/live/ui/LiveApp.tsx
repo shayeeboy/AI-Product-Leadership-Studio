@@ -3,9 +3,10 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard,
 } from "lucide-react";
 import { useLiveStore } from "../store";
+import { LiveExecutiveDashboard } from "./LiveExecutiveDashboard";
 import { LivePortfolio } from "./LivePortfolio";
 import { LiveProductDetail } from "./LiveProductDetail";
 import { RegisterProduct } from "./RegisterProduct";
@@ -23,10 +24,10 @@ import { BuildVsBuy } from "@/modules/build-vs-buy/BuildVsBuy"; // seed-free cal
 
 const NAV_GROUPS = [
   {
-    layer: "Portfolio",
+    layer: "Executive",
     items: [
-      { to: "/", label: "Portfolio", icon: LayoutGrid, end: true },
-      { to: "/cross", label: "Cross-Product", icon: BarChart3, end: false },
+      { to: "/executive", label: "Executive Dashboard", icon: LayoutDashboard, end: false },
+      { to: "/cross", label: "Cross-Product Intelligence", icon: BarChart3, end: false },
     ],
   },
   {
@@ -49,7 +50,13 @@ const NAV_GROUPS = [
       { to: "/evaluation", label: "Evaluation Dashboard", icon: Gauge, end: false },
     ],
   },
-  { layer: "Products", items: [{ to: "/register", label: "Register a product", icon: PlusCircle, end: false }] },
+  {
+    layer: "Products",
+    items: [
+      { to: "/", label: "Live Portfolio", icon: LayoutGrid, end: true },
+      { to: "/register", label: "Register a product", icon: PlusCircle, end: false },
+    ],
+  },
 ];
 
 export function LiveApp() {
@@ -130,6 +137,7 @@ export function LiveApp() {
             ) : (
               <Routes>
                 <Route path="/" element={<LivePortfolio />} />
+                <Route path="/executive" element={<LiveExecutiveDashboard />} />
                 <Route path="/product/:id" element={<LiveProductDetail />} />
                 <Route path="/register" element={<RegisterProduct />} />
                 <Route path="/cross" element={<CrossProductLive />} />

@@ -61,7 +61,7 @@
 
     <!-- roll up -->
     <rect x="518" y="366" width="336" height="34" rx="8" fill="#eef4ff" stroke="#c7d7fb"/>
-    <text x="530" y="387" class="row" fill="#2244a8">Executive Dashboard — rolls all of the above up <tspan fill="#a16207">(R13 ◷ next)</tspan></text>
+    <text x="530" y="387" class="row" fill="#2244a8">Executive Dashboard — rolls all of the above up <tspan fill="#16a34a">(R13 ✓)</tspan></text>
   </g>
 
   <!-- arrows -->

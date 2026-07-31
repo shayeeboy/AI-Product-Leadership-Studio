@@ -81,9 +81,16 @@ data you enter and it persists. No seed, ever; a missing input shows an honest e
   likelihood×impact heatmap + funding from registration), Responsible AI Center (policies,
   bias/privacy/security review queues, model cards, live audit trail), and a generalized Evaluation Dashboard.
 
-The live app now carries the seeded app's **left-rail shell** and, group by group, its module set —
-**Executive · Decision · Governance · Products**. Only the Executive Dashboard roll-ups (**R13**) and
-Product Discovery (**R5**) remain to reach full parity.
+- **R13 — executive roll-ups live.** The **Executive Dashboard** computes every KPI live from the
+  registry, live snapshots and persisted data (open risks, pending governance, opportunities scored,
+  live eval pass-rate, spend + ROI target) — each tile a real rollup or an explicit **"Not reported,"**
+  never a seeded number — plus an auto-generated executive summary; **Cross-Product Intelligence**
+  gains opportunity-score / open-risk columns and business-unit segmentation.
+
+The live app now carries the seeded app's **left-rail shell** and its full module set across four
+groups — **Executive · Decision · Governance · Products**. Phase 3 module parity is complete; only
+Product Discovery (**R5**) and real cost/adoption/dependency telemetry (**R14**) remain to fully
+match the seeded demo.
 
 ### Phase 3 architecture
 
@@ -232,14 +239,14 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 - **R10 — Data-model foundation (Phase 3). ✅ SHIPPED 2026-07-31.** Extended registration metadata (lifecycle, budget, spend, ROI target) + a generic `studio_entities` table backing all eight Studio-managed entity kinds (risks, policies, reviews, model cards, cost inputs, ROI scenarios, maturity scores, prioritization inputs) — adding a kind needs no migration. Worker entity CRUD + `/api/state` grouping; client `saveEntity`/`deleteEntity` with localStorage fallback; backend-row camelCase normalization. Verified round-tripping against Neon. Prerequisite for R11–R13.
 - **R11 — Decision modules live (Phase 3A). ✅ SHIPPED 2026-07-31.** The six decision modules now run in the live copy on Studio-managed data: **Opportunity Assessment** (persists to `/api/assessments`) → **Investment Prioritization** (RICE / WSJF / Value-Effort / Opportunity from persisted assessments; effort persisted as `prioritization_input`), **ROI Simulator** (saved `roi_scenario` entities), **Cost Analyzer** (inference line anchored on a product's real live cost/query), **Build vs Buy** (seed-free calculator, reused), **Maturity Assessment** (persisted `maturity_score`, seedable from the Diagnostic's live readiness). The live app adopts the seeded **left-rail shell**. Frontend-only — no backend redeploy (uses the R1/R10 endpoints).
 - **R12 — Governance modules live (Phase 3B). ✅ SHIPPED 2026-07-31.** **Portfolio Governance** (registry + funding/owner/sponsor from registration metadata + a **real risk register** you enter → likelihood×impact heatmap), **Responsible AI Center** (persisted policies, bias/privacy/security review queues, model cards auto-seedable from the registry, + the live audit trail), and a **generalized Evaluation Dashboard** (per-product live eval metrics wherever a snapshot exposes them, honest "unreachable / no metrics" otherwise). Dependency graph deferred to R14. Frontend-only — no backend redeploy.
+- **R13 — Executive rollups live (Phase 3C). ✅ SHIPPED 2026-07-31 — Phase 3 module parity complete.** **Executive Dashboard** with KPIs computed live from the registry, live snapshots (`useQueries` across products) and persisted governance/decision data — registered/reachable products, open risks, pending governance, opportunities scored, live eval pass-rate, spend + ROI-target from registration — each tile a real rollup or an explicit **"Not reported"** (never a seeded KPI); auto-generated executive summary + top-opportunity chart. **Cross-Product Intelligence** extended with opportunity-score + open-risk columns and business-unit segmentation. Nav reorganized into **Executive · Decision · Governance · Products**. Frontend-only. *(Remaining to full seeded parity: Product Discovery = R5; real spend/adoption/dependency telemetry = R14.)*
 
 **Near-term**
 - **R3 — Code-split** the Recharts-heavy bundle (live ~666 kB, seeded ~737 kB → lazy per route) to cut first-load.
 - **R4 — Tests.** Vitest + RTL for the scoring/rollup logic; a Playwright smoke suite over primary nav + one workflow per module.
 - **R9 — Refresh cadence.** Scheduled regeneration of the FI `studio-snapshot.json` and RAG `eval/summary.json` so the live snapshots track the latest source data automatically.
 
-**Phase 3 — full module parity, live** — bring every seeded module into the live copy on **Studio-managed data** (registration metadata + user-entered data persisted to R1 Neon), no further source-app changes. **R10–R12 are shipped** (above); **R13** remains. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
-- **R13 — Executive rollups live (Phase 3C).** ← *next.* Executive Dashboard KPIs + full Cross-Product scorecard computed from live/persisted data (registry funding, persisted assessments/risks/reviews, live eval); unavailable KPIs show "not reported."
+**Phase 3 — full module parity, live** — bring every seeded module into the live copy on **Studio-managed data** (registration metadata + user-entered data persisted to R1 Neon), no further source-app changes. **R10–R13 are all shipped** (above) — **Phase 3 module parity is complete.** The live copy now runs the Executive, Decision and Governance module groups on live + persisted Studio-managed data; only Product Discovery (**R5**) and real telemetry (**R14**) remain to fully match the seeded demo. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
 
 **Stretch**
 - **R5 — Optional live LLM assist** in Product Discovery (graceful template fallback with no key).

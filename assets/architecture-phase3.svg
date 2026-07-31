@@ -23,7 +23,7 @@
     <!-- Executive -->
     <rect x="32" y="80" width="200" height="150" rx="10" fill="#eef4ff" stroke="#c7d7fb"/>
     <text x="46" y="102" class="grp" fill="#2244a8">Executive</text>
-    <text x="46" y="124" class="mod">• Executive Dashboard <tspan fill="#a16207">(R13 ◷)</tspan></text>
+    <text x="46" y="124" class="mod">• Executive Dashboard <tspan fill="#16a34a">(R13 ✓)</tspan></text>
     <text x="46" y="142" class="mod">• Cross-Product Intelligence</text>
 
     <!-- Decision -->

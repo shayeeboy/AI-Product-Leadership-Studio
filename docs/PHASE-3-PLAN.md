@@ -100,7 +100,13 @@ already live. Dependency graph deferred to R14. Frontend-only. Original plan bel
 - **Acceptance:** a risk entered on one screen shows in the heatmap and the product detail; a
   review advanced in the RAI Center writes to the audit trail; all persisted.
 
-### R13 — Phase 3C: Executive rollups live
+### R13 — Phase 3C: Executive rollups live — ✅ Shipped 2026-07-31 (Phase 3 parity complete)
+**Shipped:** `LiveExecutiveDashboard` (KPIs from registry + live snapshots via `useQueries` +
+persisted entities/workflow; each tile a real rollup or explicit "Not reported"; auto exec summary +
+top-opportunity chart) and an extended `CrossProductLive` (opportunity-score + open-risk columns +
+business-unit segmentation). Nav reorganized into Executive · Decision · Governance · Products.
+Frontend-only. Remaining to full seeded parity: Product Discovery (R5) + telemetry (R14).
+
 - **Executive Dashboard:** KPIs computed live from registry + governance + persisted decisions
   (portfolio health, blended ROI target, governance status, eval pass-rate). KPIs with no source
   (e.g. real spend/adoption) show **"not reported"** until R14.
