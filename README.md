@@ -4,7 +4,15 @@
 
 ![status](https://img.shields.io/badge/build-passing-brightgreen) ![stack](https://img.shields.io/badge/React%2018-Vite%205-blue) ![hosting](https://img.shields.io/badge/GitHub%20Pages-%240%2Fmo-success) ![license](https://img.shields.io/badge/license-MIT-black)
 
-The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shayeeboy), whose first three projects are real execution engines — the [AI-Native Diagnostic](https://github.com/shayeeboy/ai-native-diagnostic), [Enterprise RAG Assistant](https://github.com/shayeeboy/Enterprise-RAG-Assistant) and [Financial Intelligence Strategy Agent](https://github.com/shayeeboy/Financial-Intelligence-Strategy-Agent). Rather than rebuild them, the Studio **integrates them live** — reading each app's real snapshot endpoint through typed adapters — and adds the executive layer they lack: opportunity scoring, build-vs-buy, governance, scorecards, responsible-AI ops, cost/ROI, prioritization and maturity. A retained seeded demo shows the full executive breadth across a 12-product portfolio.
+The Studio is the fourth member of [**My AI Portfolio**](https://github.com/shayeeboy), whose first three projects are real execution engines — the [AI-Native Diagnostic](https://github.com/shayeeboy/ai-native-diagnostic), [Enterprise RAG Assistant](https://github.com/shayeeboy/Enterprise-RAG-Assistant) and [Financial Intelligence Strategy Agent](https://github.com/shayeeboy/Financial-Intelligence-Strategy-Agent). Rather than rebuild them, the Studio **integrates them live** — reading each app's real snapshot endpoint through typed adapters — and adds the executive layer they lack: opportunity scoring, build-vs-buy, governance, scorecards, responsible-AI ops, cost/ROI, prioritization and maturity.
+
+It got there in three phases, each building on the last without breaking the one before:
+
+- **Phase 1 — seeded platform.** A full **13-module** executive Studio over a seeded 12-product portfolio, shipped static for $0. Retained as a breadth demo at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/).
+- **Phase 2 — live integration.** A **registry-driven** live copy that reads each real app's own snapshot endpoint (no seed), with a Register-a-product flow for future apps and optional shared persistence.
+- **Phase 3 — full module parity, live.** The decision and governance toolset now runs in the live copy on real, persisted **Studio-managed data** — register → assess → prioritize → govern → evaluate — not seed.
+
+Because every module was written against a stable data *contract*, each phase swapped the source, not the screens.
 
 ---
 
@@ -55,16 +63,48 @@ Studio is verified pulling real data (and persisting writes) in production (see 
 
 ---
 
+## Phase 3 — Full module parity, live (R10–R12)
+
+Phase 2 made the live copy *real* but *lean* — a portfolio of live products plus a few governance
+screens. Phase 3 brings the **whole executive toolset** into the live copy, on one principle:
+everything a module shows must be **real** — either live from a source (Phase 2) or **Studio-managed**
+data you enter and it persists. No seed, ever; a missing input shows an honest empty state.
+
+- **R10 — data-model foundation.** Registrations gained funding / lifecycle / ROI metadata, and a
+  single generic `studio_entities` table now backs **eight** kinds of governance/decision data
+  (risks, policies, reviews, model cards, cost inputs, ROI scenarios, maturity scores, prioritization
+  inputs) — persisted to shared Neon when configured, else localStorage. Adding a kind needs no migration.
+- **R11 — decision modules live.** Opportunity Assessment → Investment Prioritization (scores flow
+  through, no re-entry), ROI Simulator (saved scenarios), Cost Analyzer (anchored on a product's real
+  live cost/query), Build vs Buy, and Maturity Assessment (seedable from the Diagnostic's live readiness).
+- **R12 — governance modules live.** Portfolio Governance (a real risk register driving the
+  likelihood×impact heatmap + funding from registration), Responsible AI Center (policies,
+  bias/privacy/security review queues, model cards, live audit trail), and a generalized Evaluation Dashboard.
+
+The live app now carries the seeded app's **left-rail shell** and, group by group, its module set —
+**Executive · Decision · Governance · Products**. Only the Executive Dashboard roll-ups (**R13**) and
+Product Discovery (**R5**) remain to reach full parity.
+
+### Phase 3 architecture
+
+![Phase 3 architecture](assets/architecture-phase3.svg)
+
+### Phase 3 — Studio-managed data lifecycle
+
+![Phase 3 workflow](assets/phase3-workflow.svg)
+
+---
+
 ## Executive summary
 
 | | |
 |---|---|
 | **Problem** | Enterprises run *many* AI products at once, but the judgment work — which to fund, which to govern, which to kill, what it costs, whether it's safe — happens in scattered decks and spreadsheets. There's no single operating surface for the portfolio. |
 | **User** | Senior/Principal PM, Director of Product, Head of AI Product, or AI Strategy leader running an enterprise AI portfolio — plus the governance, finance and risk partners they review with. |
-| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio. The **live copy** does this over the three real, shipped apps — integrated live from their own endpoints, with a Register-a-product flow for future ones; the **seeded demo** shows the full executive breadth across a 12-product portfolio. |
-| **Enterprise applicability** | The three-layer model (Executive / Governance / Decision) over adapters + shared services mirrors how a real platform team structures a multi-tenant internal tool. Any real AI product plugs in by exposing one snapshot endpoint and registering it — as the three real apps and the Register-a-product flow demonstrate live. |
-| **Success metric** | **Live:** a reviewer sees real data flowing from three shipped AI products (RAG eval + observability, live economic indicators, diagnostic readiness), and can register a new product against its endpoint and watch it appear. **Seeded:** the same reviewer can walk the 13-module executive breadth and, at each screen, answer *"so what should I decide?"* — interactive inputs that change outputs, not static mockups. |
-| **Acceptance criteria** | **Live copy** — three real apps integrated live via their own snapshot endpoints · registry + Register-a-product flow · shared Neon persistence (localStorage fallback) · no seeded values, honest down-states. **Seeded demo** — all 13 modules routable · one governance engine reused across modules · every KPI charted · 3 modules genuinely interactive · Responsible AI Center complete. Both build static and deploy to Pages ($0). Seeded checklist: [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
+| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio. The **live copy** now does this end-to-end on real data — three shipped apps integrated live, *plus* the decision and governance toolset running on persisted **Studio-managed data** (register → assess → prioritize → govern → evaluate); the **seeded demo** preserves the original 12-product breadth walkthrough. |
+| **Enterprise applicability** | The three-layer model (Executive / Governance / Decision) over adapters + shared services mirrors how a real platform team structures a multi-tenant internal tool. Any real AI product plugs in by exposing one snapshot endpoint and registering it; its governance and decision records are then captured and persisted like any enterprise tool — as the live copy now demonstrates end to end. |
+| **Success metric** | **Live:** a reviewer sees real data from three shipped AI products, registers a new one against its endpoint, then *works the portfolio* — scores an opportunity that flows into prioritization, logs a risk that lands on the heatmap, saves an ROI scenario — every entry persisted, **none seeded**. **Seeded:** the same reviewer can still walk the original 13-module breadth demo and, at each screen, answer *"so what should I decide?"* |
+| **Acceptance criteria** | **Live copy** — three real apps integrated live via their own endpoints · registry + Register-a-product flow · the **Decision** and **Governance** module groups live on persisted Studio-managed data · shared Neon persistence (localStorage fallback) · no seeded values, honest empty states. **Seeded demo** — the original 13 modules routable · one governance engine reused · every KPI charted · Responsible AI Center complete. Both build static and deploy to Pages ($0). Seeded checklist: [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
 | **Key trade-off decisions** | See below. |
 
 ### Key trade-off decisions
@@ -95,7 +135,7 @@ Studio is verified pulling real data (and persisting writes) in production (see 
 - [Run it locally](#run-it-locally)
 - [Demo script](#demo-script)
 
-> The sections below describe the **seeded phase-1 build** (the retained [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/) demo) — its three-layer model, 13 modules and seeded adapters. The **live copy** is covered in [Phase 2 — Live integration](#phase-2--live-integration-r1--r2) above (registry, live adapters, the enriched source endpoints, and persistence).
+> The sections below document the **seeded phase-1 build** (the retained [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/) demo) — its three-layer model, 13 modules and seeded adapters, which are the *architectural blueprint* the live copy later grew into. The **live copy's** evolution is covered above: [Phase 2](#phase-2--live-integration-r1--r2) (registry, live adapters, enriched endpoints, persistence) and [Phase 3](#phase-3--full-module-parity-live-r10r12) (the full decision + governance module set on Studio-managed data).
 
 ### Architecture
 
@@ -139,7 +179,7 @@ The **seeded demo** ships all 13 under the app shell:
 
 The interactive ones — Opportunity Assessment, Build vs Buy, Cost Analyzer, ROI Simulator, Investment Prioritization, Maturity — recompute outputs from your inputs live. Opportunity scores flow into Investment Prioritization with no re-entry.
 
-The **live copy** is intentionally leaner — it shows only what the real endpoints support: **Live Portfolio** (status cards), **Product Detail** (a readiness / RAG-health / financial panel driven by the live snapshot), **Register a product**, **Cross-Product Live Scorecard**, and **Governance & Approvals** (persisted workflow + audit).
+The **live copy** started leaner but, through Phase 3, now carries the same groups on the left-rail shell: **Portfolio** (live status cards + Product Detail + Register), the full **Decision** group (Opportunity Assessment, Investment Prioritization, Build vs Buy, Cost Analyzer, ROI Simulator, Maturity Assessment) and **Governance** group (Portfolio Governance, Responsible AI Center, Human Approval Center, Evaluation Dashboard) — all on live + persisted Studio-managed data. Only the Executive Dashboard roll-ups (R13) and Product Discovery (R5) remain seeded-only. See the [Phase 3 architecture + workflow diagrams](#phase-3--full-module-parity-live-r10r12).
 
 ### Run it locally
 
@@ -182,6 +222,7 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 - **`noUnusedLocals` + `tsc` caught the only real defect** (a stray import) before it ever ran — cheap, high-signal correctness for the time budget.
 - **Status vocabulary is a design system.** One `lib/status.ts` map for colors/labels is why the whole portfolio reads as one system across badges, heatmaps and timelines.
 - **(Phase 2) The CORS header the source apps already sent for the Pages origin is what made live integration free.** Because the three apps allow `https://shayeeboy.github.io`, the live copy fetches their snapshots straight from the browser — no proxy, no backend, $0. The honest move was to *enrich* the sources to emit real snapshots rather than paper over the gap with seeded numbers; the live UI shows "unreachable" when a free-tier backend is cold rather than inventing data.
+- **(Phase 3) "No seed" is a forcing function that makes a better product.** Bringing modules live on Studio-managed data meant every screen had to earn its numbers from real input or a live source — which turned vague seeded dashboards into honest, interactive tools: enter a risk and the heatmap moves; score an opportunity and it ranks in prioritization; save an ROI scenario and it compares. Empty states became a feature, not a gap. And one generic `studio_entities` table (add a kind, no migration) kept the whole phase frontend-only on the R1/R10 backend.
 
 ## Improvement roadmap
 
@@ -211,6 +252,6 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 
 ## Positioning
 
-This reads as a coherent **AI Product Leadership platform**, not "three AI projects plus a dashboard." The three engines are real, shipped, and now **integrated live** — the Studio reads each one's real snapshot endpoint and adds the governance, decision and executive layer a Director/VP needs to run all of them (and future products, via Register-a-product) as a portfolio. It demonstrates product judgment, governance, investment decision-making and executive storytelling — end to end, on real data — not just implementation.
+This reads as a coherent **AI Product Leadership platform**, not "three AI projects plus a dashboard." The three engines are real, shipped, and now **integrated live**. Over three phases the Studio grew from a seeded breadth demo (P1) to a registry-driven live platform (P2) to one where the decision and governance work itself runs on real, persisted data (P3) — the Studio reads each app's real snapshot endpoint and adds the governance, decision and executive layer a Director/VP needs to run all of them (and future products, via Register-a-product) as a portfolio. It demonstrates product judgment, governance, investment decision-making and executive storytelling — end to end, on real data — not just implementation.
 
 Build details and the full revised brief: [`docs/PLAN.md`](docs/PLAN.md) · [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md).

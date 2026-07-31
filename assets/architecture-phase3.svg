@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 660" font-family="Inter, Segoe UI, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 12px; fill: #64748b; }
+      .grp { font-size: 13px; font-weight: 700; }
+      .mod { font-size: 10.5px; fill: #1e293b; }
+      .lane { font-size: 14px; font-weight: 700; }
+      .laned { font-size: 11px; fill: #475569; }
+      .box { font-size: 11px; font-weight: 600; fill: #1e293b; }
+      .boxd { font-size: 9.5px; fill: #64748b; }
+      .tag { font-size: 9px; font-weight: 700; fill: #ffffff; }
+      .mono { font-family: ui-monospace, Menlo, monospace; font-size: 9px; fill: #334155; }
+    </style>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect width="900" height="660" fill="#f8fafc"/>
+  <text x="32" y="40" class="title">Phase 3 — Live Studio, full module parity</text>
+  <text x="32" y="60" class="sub">The registry-driven live app now runs every module group, fed by two real sources: live snapshots (Phase 2) + Studio-managed data (R1+R10). No seed.</text>
+
+  <!-- Module groups band -->
+  <g>
+    <!-- Executive -->
+    <rect x="32" y="80" width="200" height="150" rx="10" fill="#eef4ff" stroke="#c7d7fb"/>
+    <text x="46" y="102" class="grp" fill="#2244a8">Executive</text>
+    <text x="46" y="124" class="mod">• Executive Dashboard <tspan fill="#a16207">(R13 ◷)</tspan></text>
+    <text x="46" y="142" class="mod">• Cross-Product Intelligence</text>
+
+    <!-- Decision -->
+    <rect x="242" y="80" width="200" height="150" rx="10" fill="#fefce8" stroke="#fde68a"/>
+    <text x="256" y="102" class="grp" fill="#a16207">Decision <tspan class="tag" fill="#16a34a">R11 ✓</tspan></text>
+    <text x="256" y="124" class="mod">• Opportunity Assessment</text>
+    <text x="256" y="142" class="mod">• Investment Prioritization</text>
+    <text x="256" y="160" class="mod">• Build vs Buy</text>
+    <text x="256" y="178" class="mod">• Cost Analyzer</text>
+    <text x="256" y="196" class="mod">• ROI Simulator</text>
+    <text x="256" y="214" class="mod">• Maturity Assessment</text>
+
+    <!-- Governance -->
+    <rect x="452" y="80" width="200" height="150" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="466" y="102" class="grp" fill="#15803d">Governance <tspan class="tag" fill="#16a34a">R12 ✓</tspan></text>
+    <text x="466" y="124" class="mod">• Portfolio Governance</text>
+    <text x="466" y="142" class="mod">• Responsible AI Center</text>
+    <text x="466" y="160" class="mod">• Human Approval Center</text>
+    <text x="466" y="178" class="mod">• Evaluation Dashboard</text>
+
+    <!-- Products -->
+    <rect x="662" y="80" width="206" height="150" rx="10" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="676" y="102" class="grp" fill="#334155">Products</text>
+    <text x="676" y="124" class="mod">• Live Portfolio</text>
+    <text x="676" y="142" class="mod">• Register a product</text>
+    <text x="676" y="160" class="mod">• Product Detail</text>
+  </g>
+
+  <text x="450" y="256" text-anchor="middle" class="sub">modules read from ↓ (live) and/or ↓ (Studio-managed)</text>
+  <g stroke="#94a3b8" stroke-width="1.5" fill="none">
+    <path d="M132 230 L132 300" marker-end="url(#a)"/>
+    <path d="M342 230 L342 430" marker-end="url(#a)"/>
+    <path d="M552 230 L552 430" marker-end="url(#a)"/>
+    <path d="M765 230 L765 430" marker-end="url(#a)"/>
+  </g>
+
+  <!-- Lane A: Live snapshots -->
+  <rect x="32" y="300" width="836" height="112" rx="12" fill="#ffffff" stroke="#c7d7fb"/>
+  <text x="48" y="324" class="lane" fill="#2244a8">Live snapshots — Phase 2 (R2)</text>
+  <text x="48" y="342" class="laned">Live adapters fetch each app's real endpoint from the browser (CORS: Pages origin, no proxy)</text>
+  <g>
+    <rect x="48" y="352" width="256" height="46" rx="8" fill="#eef4ff" stroke="#c7d7fb"/>
+    <text x="60" y="370" class="box">AI-Native Diagnostic</text><text x="60" y="388" class="mono">GET /api/snapshot → readiness</text>
+    <rect x="318" y="352" width="256" height="46" rx="8" fill="#eef4ff" stroke="#c7d7fb"/>
+    <text x="330" y="370" class="box">Enterprise RAG</text><text x="330" y="388" class="mono">GET /snapshot → health + eval</text>
+    <rect x="588" y="352" width="268" height="46" rx="8" fill="#eef4ff" stroke="#c7d7fb"/>
+    <text x="600" y="370" class="box">Financial Intelligence</text><text x="600" y="388" class="mono">studio-snapshot.json → indicators</text>
+  </g>
+
+  <!-- Lane B: Studio-managed data -->
+  <rect x="32" y="430" width="836" height="150" rx="12" fill="#0f172a"/>
+  <text x="48" y="454" class="lane" fill="#ffffff">Studio-managed data — R1 + R10</text>
+  <text x="48" y="472" class="laned" fill="#94a3b8">Registration metadata + user-entered governance/decision data, persisted (shared Neon when configured, else localStorage)</text>
+  <g>
+    <rect x="48" y="482" width="256" height="80" rx="8" fill="#1e293b" stroke="#334155"/>
+    <text x="60" y="502" class="box" fill="#e2e8f0">Registration + workflow</text>
+    <text x="60" y="520" class="boxd" fill="#94a3b8">name · owner · funding · lifecycle</text>
+    <text x="60" y="536" class="boxd" fill="#94a3b8">governance stages · audit trail (R1)</text>
+
+    <rect x="318" y="482" width="366" height="80" rx="8" fill="#1e293b" stroke="#334155"/>
+    <text x="330" y="502" class="box" fill="#e2e8f0">studio_entities — one generic table, 8 kinds (R10)</text>
+    <text x="330" y="520" class="mono" fill="#cbd5e1">risk · policy · review · model_card ·</text>
+    <text x="330" y="536" class="mono" fill="#cbd5e1">cost_input · roi_scenario · maturity_score · prioritization_input</text>
+
+    <rect x="698" y="482" width="158" height="80" rx="8" fill="#2b57d4"/>
+    <text x="777" y="516" text-anchor="middle" class="box" fill="#ffffff">Cloudflare Worker</text>
+    <text x="777" y="534" text-anchor="middle" class="boxd" fill="#c7d7fb">+ Neon · localStorage</text>
+  </g>
+
+  <text x="32" y="602" class="boxd">Invariant: modules render only live / persisted / registration data + honest empty states — never seed. R13 rolls all of the above into the Executive Dashboard.</text>
+  <text x="32" y="620" class="boxd">Retained phase-1 seeded 13-module demo remains at /seeded/ (built from the same codebase via VITE_DATA_MODE=seeded).</text>
+</svg>
