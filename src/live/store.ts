@@ -1,10 +1,13 @@
 import { create } from "zustand";
-import type { Registration } from "./types";
+import type { Registration, EntityMap, EntityType, EntityRow } from "./types";
+import { emptyEntities } from "./types";
 import {
   loadState,
   registerProduct,
   advanceWorkflow,
   saveAssessment,
+  saveEntity,
+  deleteEntity,
   hasBackend,
   type WorkflowStageRow,
   type AuditRow,
@@ -18,10 +21,13 @@ interface LiveStore {
   workflow: WorkflowStageRow[];
   audit: AuditRow[];
   assessments: AssessmentRow[];
+  entities: EntityMap;
   init: () => Promise<void>;
   addRegistration: (r: Registration) => Promise<void>;
   advance: (w: WorkflowStageRow & { actor?: string }) => Promise<void>;
   addAssessment: (a: AssessmentRow) => Promise<void>;
+  saveEntity: (name: EntityType, row: { id?: string; productId?: string | null; data: Record<string, unknown> }) => Promise<EntityRow>;
+  removeEntity: (name: EntityType, id: string) => Promise<void>;
   productById: (id: string) => Registration | undefined;
 }
 
@@ -32,6 +38,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
   workflow: [],
   audit: [],
   assessments: [],
+  entities: emptyEntities(),
 
   init: async () => {
     const s = await loadState();
@@ -56,6 +63,19 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
     await saveAssessment(a);
     const s = await loadState();
     set({ assessments: s.assessments });
+  },
+
+  saveEntity: async (name, row) => {
+    const created = await saveEntity(name, row);
+    const s = await loadState();
+    set({ entities: s.entities });
+    return created;
+  },
+
+  removeEntity: async (name, id) => {
+    await deleteEntity(name, id);
+    const s = await loadState();
+    set({ entities: s.entities });
   },
 
   productById: (id) => get().registrations.find((r) => r.id === id),

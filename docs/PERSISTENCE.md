@@ -42,11 +42,24 @@ Free + Cloudflare Workers Free).
 | Method | Path | Body | Purpose |
 |---|---|---|---|
 | GET | `/api/health` | — | liveness + db check |
-| GET | `/api/state` | — | one-shot load of registrations, assessments, workflow, audit |
-| POST | `/api/registrations` | `{name, businessUnit, owner, adapterType, endpointUrl}` | register a product (+ seed `Registered` stage + audit) |
+| GET | `/api/state` | — | one-shot load of registrations, assessments, workflow, audit, **entities** |
+| POST | `/api/registrations` | `{name, businessUnit, owner, adapterType, endpointUrl, lifecycle, annualBudget, monthlySpend, roiTarget}` | register a product (+ seed `Registered` stage + audit) |
 | DELETE | `/api/registrations/:id` | — | remove a registration |
 | POST | `/api/assessments` | `{title, scores, opportunityScore, recommendation, ...}` | persist an opportunity assessment |
 | POST | `/api/workflow` | `{productId, stage, status, reviewer, comment, actor}` | advance a governance stage (+ audit) |
+| POST | `/api/entity/:name` | `{id?, productId?, data}` | upsert a Studio-managed entity (R10) |
+| DELETE | `/api/entity/:name/:id` | — | delete a Studio-managed entity (R10) |
 
 `adapterType` ∈ `readiness | rag-health | financial | health`. `endpointUrl` is
 the product's live snapshot endpoint (nullable for manual entries).
+
+`:name` (entity kind) ∈ `risk | policy | review | model_card | cost_input |
+roi_scenario | maturity_score | prioritization_input` — one generic
+`studio_entities` table backs them all, so adding a kind needs no migration.
+
+### Updating an already-deployed backend (R10+)
+
+The schema changes are additive (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF
+NOT EXISTS`), so to pick up R10:
+1. Re-apply `server/schema.sql` in the Neon SQL editor (safe to re-run).
+2. Redeploy the Worker: `npm run worker:deploy`.

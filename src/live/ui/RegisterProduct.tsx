@@ -4,8 +4,10 @@ import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useLiveStore } from "../store";
 import { fetchLive } from "../liveAdapters";
 import { Card, PageHeader, SectionTitle } from "@/shared/components/ui";
-import { ADAPTER_LABELS, type AdapterType, type Registration } from "../types";
+import { ADAPTER_LABELS, type AdapterType, type Registration, type Lifecycle } from "../types";
 import type { ProductStatus } from "@/types/domain";
+
+const LIFECYCLES: Lifecycle[] = ["discovery", "build", "pilot", "production", "archived"];
 
 const ADAPTERS = Object.keys(ADAPTER_LABELS) as AdapterType[];
 
@@ -14,6 +16,7 @@ export function RegisterProduct() {
   const addRegistration = useLiveStore((s) => s.addRegistration);
   const [form, setForm] = useState({
     name: "", businessUnit: "", owner: "", sponsor: "", architecture: "", adapterType: "health" as AdapterType, endpointUrl: "",
+    lifecycle: "", annualBudget: "", monthlySpend: "", roiTarget: "",
   });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -47,6 +50,10 @@ export function RegisterProduct() {
       adapterType: form.adapterType,
       endpointUrl: form.endpointUrl || undefined,
       status: "pending" as ProductStatus,
+      lifecycle: form.lifecycle ? (form.lifecycle as Lifecycle) : undefined,
+      annualBudget: form.annualBudget ? Number(form.annualBudget) : undefined,
+      monthlySpend: form.monthlySpend ? Number(form.monthlySpend) : undefined,
+      roiTarget: form.roiTarget ? Number(form.roiTarget) : undefined,
     };
     try {
       await addRegistration(reg);
@@ -80,6 +87,15 @@ export function RegisterProduct() {
                 {ADAPTERS.map((a) => <option key={a} value={a}>{ADAPTER_LABELS[a]}</option>)}
               </select>
             </Field>
+            <Field label="Lifecycle">
+              <select value={form.lifecycle} onChange={set("lifecycle")} className={inputCls}>
+                <option value="">—</option>
+                {LIFECYCLES.map((l) => <option key={l} value={l} className="capitalize">{l}</option>)}
+              </select>
+            </Field>
+            <Field label="Annual budget (USD)"><input type="number" min={0} value={form.annualBudget} onChange={set("annualBudget")} className={inputCls} placeholder="e.g. 60000" /></Field>
+            <Field label="Monthly spend (USD)"><input type="number" min={0} value={form.monthlySpend} onChange={set("monthlySpend")} className={inputCls} placeholder="e.g. 4200" /></Field>
+            <Field label="ROI target (%)"><input type="number" value={form.roiTarget} onChange={set("roiTarget")} className={inputCls} placeholder="e.g. 150" /></Field>
           </div>
           <div className="mt-3">
             <Field label="Snapshot endpoint URL">

@@ -8,6 +8,8 @@
 //   DELETE /api/registrations/:id           → remove a registration
 //   POST /api/assessments {assessment}      → persist an opportunity assessment
 //   POST /api/workflow {productId,stage,status,reviewer,comment,actor} → advance a stage (+ audit)
+//   POST /api/entity/:name {id?,productId?,data}       → upsert a Studio-managed entity (R10)
+//   DELETE /api/entity/:name/:id                       → delete a Studio-managed entity (R10)
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
 //   DATABASE_URL    Neon connection string           (secret)
@@ -22,6 +24,18 @@ const WORKFLOW_STAGES = [
   "Human Approval",
   "Deployment Approval",
   "In Production",
+];
+
+// Allowlisted Phase 3 (R10) Studio-managed entity kinds, stored in studio_entities.
+const ENTITY_TYPES = [
+  "risk",
+  "policy",
+  "review",
+  "model_card",
+  "cost_input",
+  "roi_scenario",
+  "maturity_score",
+  "prioritization_input",
 ];
 
 export default {
@@ -44,13 +58,38 @@ export default {
       }
 
       if (p === "/api/state" && request.method === "GET") {
-        const [registrations, assessments, workflow, audit] = await Promise.all([
+        const [registrations, assessments, workflow, audit, entityRows] = await Promise.all([
           sql`SELECT * FROM registrations ORDER BY created_at DESC`,
           sql`SELECT * FROM assessments ORDER BY created_at DESC`,
           sql`SELECT * FROM workflow_stages`,
           sql`SELECT * FROM audit_events ORDER BY created_at DESC LIMIT 200`,
+          sql`SELECT entity, id, product_id, data, created_at, updated_at FROM studio_entities ORDER BY created_at DESC`,
         ]);
-        return json({ registrations, assessments, workflow, audit }, 200, cors);
+        const entities = Object.fromEntries(ENTITY_TYPES.map((t) => [t, []]));
+        for (const r of entityRows) (entities[r.entity] ||= []).push(r);
+        return json({ registrations, assessments, workflow, audit, entities }, 200, cors);
+      }
+
+      if (p.startsWith("/api/entity/")) {
+        const parts = p.split("/").filter(Boolean); // ["api","entity",name,(id)]
+        const name = parts[2];
+        if (!ENTITY_TYPES.includes(name)) return json({ error: "unknown entity type" }, 400, cors);
+        if (request.method === "POST") {
+          const b = await request.json().catch(() => ({}));
+          const id = b.id || crypto.randomUUID();
+          const [row] = await sql`
+            INSERT INTO studio_entities (entity, id, product_id, data, updated_at)
+            VALUES (${name}, ${id}, ${b.productId || null}, ${JSON.stringify(b.data || {})}, now())
+            ON CONFLICT (entity, id) DO UPDATE SET
+              product_id = EXCLUDED.product_id, data = EXCLUDED.data, updated_at = now()
+            RETURNING *`;
+          return json({ ok: true, entity: row }, 201, cors);
+        }
+        if (request.method === "DELETE") {
+          const id = decodeURIComponent(parts[3] || "");
+          const del = await sql`DELETE FROM studio_entities WHERE entity = ${name} AND id = ${id} RETURNING id`;
+          return json({ ok: true, deleted: del[0]?.id ?? null }, 200, cors);
+        }
       }
 
       if (p === "/api/registrations" && request.method === "POST") {
@@ -59,12 +98,18 @@ export default {
         if (!v.ok) return json({ error: v.error }, 400, cors);
         const r = v.value;
         const [row] = await sql`
-          INSERT INTO registrations (id, name, business_unit, owner, sponsor, architecture, adapter_type, endpoint_url, status)
-          VALUES (${r.id}, ${r.name}, ${r.businessUnit}, ${r.owner}, ${r.sponsor}, ${r.architecture}, ${r.adapterType}, ${r.endpointUrl}, ${r.status})
+          INSERT INTO registrations
+            (id, name, business_unit, owner, sponsor, architecture, adapter_type, endpoint_url, status,
+             lifecycle, annual_budget, monthly_spend, roi_target)
+          VALUES
+            (${r.id}, ${r.name}, ${r.businessUnit}, ${r.owner}, ${r.sponsor}, ${r.architecture}, ${r.adapterType}, ${r.endpointUrl}, ${r.status},
+             ${r.lifecycle}, ${r.annualBudget}, ${r.monthlySpend}, ${r.roiTarget})
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name, business_unit = EXCLUDED.business_unit, owner = EXCLUDED.owner,
             sponsor = EXCLUDED.sponsor, architecture = EXCLUDED.architecture,
-            adapter_type = EXCLUDED.adapter_type, endpoint_url = EXCLUDED.endpoint_url
+            adapter_type = EXCLUDED.adapter_type, endpoint_url = EXCLUDED.endpoint_url,
+            lifecycle = EXCLUDED.lifecycle, annual_budget = EXCLUDED.annual_budget,
+            monthly_spend = EXCLUDED.monthly_spend, roi_target = EXCLUDED.roi_target
           RETURNING *`;
         await sql`
           INSERT INTO workflow_stages (product_id, stage, status, reviewer)
@@ -139,6 +184,10 @@ function validateRegistration(b) {
       adapterType,
       endpointUrl: b.endpointUrl || null,
       status: b.status || "pending",
+      lifecycle: b.lifecycle || null,
+      annualBudget: b.annualBudget ?? null,
+      monthlySpend: b.monthlySpend ?? null,
+      roiTarget: b.roiTarget ?? null,
     },
   };
 }

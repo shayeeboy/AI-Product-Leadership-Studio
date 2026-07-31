@@ -54,3 +54,29 @@ CREATE TABLE IF NOT EXISTS audit_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS audit_created_idx ON audit_events (created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- R10 (Phase 3 foundation) — additive, safe to re-run.
+-- ---------------------------------------------------------------------------
+
+-- Extra Studio-managed registration metadata (funding, lifecycle, ROI target).
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS lifecycle     TEXT;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS annual_budget NUMERIC;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS monthly_spend NUMERIC;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS roi_target    INTEGER;
+
+-- Generic store for all Phase 3 Studio-managed governance/decision entities:
+-- risk · policy · review · model_card · cost_input · roi_scenario ·
+-- maturity_score · prioritization_input. One table, keyed by entity name, so
+-- new entity kinds need no further migration — just a new allowlisted name.
+CREATE TABLE IF NOT EXISTS studio_entities (
+  entity     TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  product_id TEXT,
+  data       JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (entity, id)
+);
+CREATE INDEX IF NOT EXISTS studio_entities_lookup  ON studio_entities (entity, product_id);
+CREATE INDEX IF NOT EXISTS studio_entities_created ON studio_entities (created_at DESC);
