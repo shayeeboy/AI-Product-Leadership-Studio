@@ -72,8 +72,12 @@ backend-row camelCase normalization. Verified round-tripping against Neon.
 - **Acceptance:** each entity round-trips (POST → `/api/state` → DELETE) against Neon; localStorage
   parity verified offline.
 
-### R11 — Phase 3A: Decision modules live
+### R11 — Phase 3A: Decision modules live — ✅ Shipped 2026-07-31
 Port the six interactive modules into the live app, sourced from persistence.
+**Shipped:** all six live in `src/live/ui/` on the new left-rail shell — Opportunity Assessment
+(persists assessments), Investment Prioritization (consumes them; effort persisted), ROI Simulator
+(saved `roi_scenario`), Cost Analyzer (real live cost/query anchor), Build vs Buy (reused seed-free),
+Maturity (persisted `maturity_score`, Diagnostic-seeded). Frontend-only; no backend redeploy.
 - Reuse the seeded modules' UI; swap seed reads for the live store + persistence.
 - Opportunity scores flow into Investment Prioritization (no re-entry). Cost Analyzer anchors on
   RAG's real cost/query; Maturity radar seeds from the Diagnostic's live readiness.
