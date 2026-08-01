@@ -14,6 +14,8 @@ It got there in three phases, each building on the last without breaking the one
 
 Because every module was written against a stable data *contract*, each phase swapped the source, not the screens.
 
+**Contents:** [See it live](#see-it-live) · [Executive summary](#executive-summary) · [Phase 2 — Live integration](#phase-2--live-integration-r1--r2) · [Phase 3 — Full module parity](#phase-3--full-module-parity-live-r10r12) · [Run it locally](#run-it-locally-and-deploy) · [How it works](#how-it-works) · [Lessons learned](#lessons-learned) · [Roadmap](#improvement-roadmap) · [Positioning](#positioning)
+
 ---
 
 ## See it live
@@ -26,6 +28,30 @@ Both are static **React 18 / Vite 5** on GitHub Pages, **$0/month**. The live co
 each product's real snapshot directly from the browser (the source apps send CORS for the
 Pages origin — no proxy). Free-tier backends can cold-start, so a card may show "checking…"
 for a few seconds on first load.
+
+---
+
+## Executive summary
+
+| | |
+|---|---|
+| **Problem** | Enterprises run *many* AI products at once, but the judgment work — which to fund, which to govern, which to kill, what it costs, whether it's safe — happens in scattered decks and spreadsheets. There's no single operating surface for the portfolio. |
+| **User** | Senior/Principal PM, Director of Product, Head of AI Product, or AI Strategy leader running an enterprise AI portfolio — plus the governance, finance and risk partners they review with. |
+| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio. The **live copy** now does this end-to-end on real data — three shipped apps integrated live, *plus* the decision and governance toolset running on persisted **Studio-managed data** (register → assess → prioritize → govern → evaluate); the **seeded demo** preserves the original 12-product breadth walkthrough. |
+| **Enterprise applicability** | The three-layer model (Executive / Governance / Decision) over adapters + shared services mirrors how a real platform team structures a multi-tenant internal tool. Any real AI product plugs in by exposing one snapshot endpoint and registering it; its governance and decision records are then captured and persisted like any enterprise tool — as the live copy now demonstrates end to end. |
+| **Success metric** | **Live:** a reviewer sees real data from three shipped AI products, registers a new one against its endpoint, then *works the portfolio* — scores an opportunity that flows into prioritization, logs a risk that lands on the heatmap, saves an ROI scenario — every entry persisted, **none seeded**. **Seeded:** the same reviewer can still walk the original 13-module breadth demo and, at each screen, answer *"so what should I decide?"* |
+| **Acceptance criteria** | **Live copy** — three real apps integrated live via their own endpoints · registry + Register-a-product flow · the **Decision** and **Governance** module groups live on persisted Studio-managed data · shared Neon persistence (localStorage fallback) · no seeded values, honest empty states. **Seeded demo** — the original 13 modules routable · one governance engine reused · every KPI charted · Responsible AI Center complete. Both build static and deploy to Pages ($0). Seeded checklist: [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
+| **Key trade-off decisions** | See below. |
+
+### Key trade-off decisions
+
+1. **Client-first, not Cloud Run + Neon (phase 1).** The draft brief mandated a Node API + serverless Postgres. For *stable, seeded demo data* that's infrastructure with no payoff — so phase 1 bundled seed data as typed fixtures behind the adapter contract and shipped fully static for **$0**, exactly as the Financial Intelligence project did. Because modules depended on the contract not the source, going live in Phase 2 (R2) *was* a drop-in — **now shipped**. ([why](docs/REVISED-BUILD-BRIEF.md#what-changed-and-why))
+2. **Adapter contract is sacred.** `getSnapshot / getHistory / listProducts` return the §5 schemas whether the data comes from a seeded fixture or a live endpoint. Swapping the source touches ~3 files and zero modules — which is exactly why Phase 2 could go live without touching the modules.
+3. **Breadth with honest depth.** All 13 seeded routes ship as working screens rather than 5 polished + 8 stubs. Depth is front-loaded on the executive/governance/decision modules that carry the story; Product Discovery uses templated assists (as the brief permits).
+4. **HashRouter over a `404.html` hack** for zero-config deep-linking on Pages.
+5. **`npm run build` (tsc + vite) is the green-gate now**; component/e2e tests are sequenced as Roadmap R4, not pretended.
+6. **Phase 2 pivot — enrich the sources, don't fake them.** Going live meant the source apps only exposed *operational health* (Diagnostic, RAG) + *real economic data* (FI), not rich per-product snapshots. Rather than mix seeded values into a "live" copy, each source app was **enriched to emit a real snapshot endpoint**, and the live copy shows only what those endpoints actually return — with an honest "unreachable / no data" state instead of a fabricated one. The full seeded demo lives on, untouched, at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/).
+7. **Not doing R14d (real usage/adoption/billing telemetry) — deliberately, on payoff grounds.** The remaining "Not reported" tiles (adoption, cloud spend) would need the three apps to expose usage/billing endpoints or a cloud-billing integration. But they all run on **free tiers** (Groq $0/query, low traffic), so the *real* numbers would be **≈ zero** — genuine, but not informative, and the only way to make them look like an enterprise portfolio would be to fabricate them, which this project refuses to do everywhere else. So R14 was scoped to what adds *real* signal — the **dependency graph** (R14a) and **live reliability + inference cost** from data the snapshots already expose (R14b/c) — and R14d is left as a documented "wire it up if a product ever has real billing/usage" item. Better an honest "Not reported" than an impressive lie.
 
 ---
 
@@ -80,20 +106,21 @@ data you enter and it persists. No seed, ever; a missing input shows an honest e
 - **R12 — governance modules live.** Portfolio Governance (a real risk register driving the
   likelihood×impact heatmap + funding from registration), Responsible AI Center (policies,
   bias/privacy/security review queues, model cards, live audit trail), and a generalized Evaluation Dashboard.
-
 - **R13 — executive roll-ups live.** The **Executive Dashboard** computes every KPI live from the
   registry, live snapshots and persisted data (open risks, pending governance, opportunities scored,
   live eval pass-rate, spend + ROI target) — each tile a real rollup or an explicit **"Not reported,"**
   never a seeded number — plus an auto-generated executive summary; **Cross-Product Intelligence**
   gains opportunity-score / open-risk columns and business-unit segmentation.
-
 - **R5 — Product Discovery live.** The discovery workspace runs keyless (templated) with an
   **optional live LLM assist** that degrades gracefully to templates — the key stays server-side on
   the Worker's `/api/assist` route.
+- **R14a–c — dependency graph + live reliability/cost.** Portfolio Governance carries a persisted
+  **product dependency graph**, and the Executive Dashboard shows **live reliability (p95) + inference
+  cost** where a snapshot exposes them, "Not reported" otherwise.
 
 The live app now carries the seeded app's **left-rail shell** and its full module set across four
 groups — **Executive · Decision · Governance · Products** — matching the seeded 13-module breadth.
-The **dependency graph** plus **live reliability + inference cost** shipped as **R14a–c**; only real usage/adoption/billing **telemetry (R14d)** remains — a deliberate deferral (see [trade-off #7](#key-trade-off-decisions)).
+Only real usage/adoption/billing **telemetry (R14d)** remains — a deliberate deferral (see [trade-off #7](#key-trade-off-decisions)).
 
 ### Phase 3 architecture
 
@@ -105,34 +132,23 @@ The **dependency graph** plus **live reliability + inference cost** shipped as *
 
 ---
 
-## Executive summary
+## Run it locally and deploy
 
-| | |
-|---|---|
-| **Problem** | Enterprises run *many* AI products at once, but the judgment work — which to fund, which to govern, which to kill, what it costs, whether it's safe — happens in scattered decks and spreadsheets. There's no single operating surface for the portfolio. |
-| **User** | Senior/Principal PM, Director of Product, Head of AI Product, or AI Strategy leader running an enterprise AI portfolio — plus the governance, finance and risk partners they review with. |
-| **Objective** | Demonstrate the *judgment* of an AI product leader: govern, evaluate, fund and scale multiple AI products as one portfolio. The **live copy** now does this end-to-end on real data — three shipped apps integrated live, *plus* the decision and governance toolset running on persisted **Studio-managed data** (register → assess → prioritize → govern → evaluate); the **seeded demo** preserves the original 12-product breadth walkthrough. |
-| **Enterprise applicability** | The three-layer model (Executive / Governance / Decision) over adapters + shared services mirrors how a real platform team structures a multi-tenant internal tool. Any real AI product plugs in by exposing one snapshot endpoint and registering it; its governance and decision records are then captured and persisted like any enterprise tool — as the live copy now demonstrates end to end. |
-| **Success metric** | **Live:** a reviewer sees real data from three shipped AI products, registers a new one against its endpoint, then *works the portfolio* — scores an opportunity that flows into prioritization, logs a risk that lands on the heatmap, saves an ROI scenario — every entry persisted, **none seeded**. **Seeded:** the same reviewer can still walk the original 13-module breadth demo and, at each screen, answer *"so what should I decide?"* |
-| **Acceptance criteria** | **Live copy** — three real apps integrated live via their own endpoints · registry + Register-a-product flow · the **Decision** and **Governance** module groups live on persisted Studio-managed data · shared Neon persistence (localStorage fallback) · no seeded values, honest empty states. **Seeded demo** — the original 13 modules routable · one governance engine reused · every KPI charted · Responsible AI Center complete. Both build static and deploy to Pages ($0). Seeded checklist: [`docs/REVISED-BUILD-BRIEF.md`](docs/REVISED-BUILD-BRIEF.md). |
-| **Key trade-off decisions** | See below. |
+```bash
+npm install
+npm run dev          # dev server with HMR (live copy by default)
+npm run build        # tsc typecheck + live app → dist/
+npm run build:all    # live app → dist/ AND seeded demo → dist/seeded/  (what CI deploys)
+npm run preview      # serve the built bundle
+```
 
-### Key trade-off decisions
+No keys or database required. Optional env vars (see [`.env.example`](.env.example)): `VITE_DATA_MODE=seeded`
+builds the retained demo; `VITE_PERSISTENCE_API=<worker-url>` switches persistence from localStorage to the
+shared Neon backend. Locally, the Diagnostic/RAG panels show "unreachable" because those backends allow only
+the `shayeeboy.github.io` origin — they resolve on the deployed site.
 
-1. **Client-first, not Cloud Run + Neon (phase 1).** The draft brief mandated a Node API + serverless Postgres. For *stable, seeded demo data* that's infrastructure with no payoff — so phase 1 bundled seed data as typed fixtures behind the adapter contract and shipped fully static for **$0**, exactly as the Financial Intelligence project did. Because modules depended on the contract not the source, going live in Phase 2 (R2) *was* a drop-in — **now shipped**. ([why](docs/REVISED-BUILD-BRIEF.md#what-changed-and-why))
-2. **Adapter contract is sacred.** `getSnapshot / getHistory / listProducts` return the §5 schemas whether the data comes from a seeded fixture or a live endpoint. Swapping the source touches ~3 files and zero modules — which is exactly why Phase 2 could go live without touching the modules.
-3. **Breadth with honest depth.** All 13 seeded routes ship as working screens rather than 5 polished + 8 stubs. Depth is front-loaded on the executive/governance/decision modules that carry the story; Product Discovery uses templated assists (as the brief permits).
-4. **HashRouter over a `404.html` hack** for zero-config deep-linking on Pages.
-5. **`npm run build` (tsc + vite) is the green-gate now**; component/e2e tests are sequenced as Roadmap R4, not pretended.
-6. **Phase 2 pivot — enrich the sources, don't fake them.** Going live meant the source apps only exposed *operational health* (Diagnostic, RAG) + *real economic data* (FI), not rich per-product snapshots. Rather than mix seeded values into a "live" copy, each source app was **enriched to emit a real snapshot endpoint**, and the live copy shows only what those endpoints actually return — with an honest "unreachable / no data" state instead of a fabricated one. The full seeded demo lives on, untouched, at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/).
-7. **Not doing R14d (real usage/adoption/billing telemetry) — deliberately, on payoff grounds.** The remaining "Not reported" tiles (adoption, cloud spend) would need the three apps to expose usage/billing endpoints or a cloud-billing integration. But they all run on **free tiers** (Groq $0/query, low traffic), so the *real* numbers would be **≈ zero** — genuine, but not informative, and the only way to make them look like an enterprise portfolio would be to fabricate them, which this project refuses to do everywhere else. So R14 was scoped to what adds *real* signal — the **dependency graph** (R14a) and **live reliability + inference cost** from data the snapshots already expose (R14b/c) — and R14d is left as a documented "wire it up if a product ever has real billing/usage" item. Better an honest "Not reported" than an impressive lie.
-
----
-
-## Run it locally &amp; deploy
-
-- **Local:** `npm install && npm run dev` → the dev server prints a `…/AI-Product-Leadership-Studio/` URL.
-- **Hosted (live):** GitHub Pages is enabled (*Settings → Pages → Source: GitHub Actions*); the committed workflow auto-publishes every push to `main` to **[the live site above](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)**.
+**Hosted (live):** GitHub Pages is enabled (*Settings → Pages → Source: GitHub Actions*); the committed
+workflow auto-publishes every push to `main` to **[the live site above](https://shayeeboy.github.io/AI-Product-Leadership-Studio/)**.
 
 ---
 
@@ -143,8 +159,7 @@ The **dependency graph** plus **live reliability + inference cost** shipped as *
 - [Product adapters](#product-adapters)
 - [Governance workflow engine](#governance-workflow-engine)
 - [Feature modules](#feature-modules)
-- [Run it locally](#run-it-locally)
-- [Demo script](#demo-script)
+- [Demo scripts](#demo-script-live-copy)
 
 > The sections below document the **seeded phase-1 build** (the retained [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/) demo) — its three-layer model, 13 modules and seeded adapters, which are the *architectural blueprint* the live copy later grew into. The **live copy's** evolution is covered above: [Phase 2](#phase-2--live-integration-r1--r2) (registry, live adapters, enriched endpoints, persistence) and [Phase 3](#phase-3--full-module-parity-live-r10r12) (the full decision + governance module set on Studio-managed data).
 
@@ -192,21 +207,6 @@ The interactive ones — Opportunity Assessment, Build vs Buy, Cost Analyzer, RO
 
 The **live copy**, through Phase 3, now carries the same groups on the left-rail shell — **Executive** (Executive Dashboard, Cross-Product Intelligence), the full **Decision** group (Opportunity Assessment, Investment Prioritization, Build vs Buy, Cost Analyzer, ROI Simulator, Maturity Assessment), **Governance** group (Portfolio Governance, Responsible AI Center, Human Approval Center, Evaluation Dashboard) and **Products** (Live Portfolio, Product Discovery, Register) — all on live + persisted Studio-managed data. It now **matches the seeded 13-module breadth**, and Portfolio Governance carries the **dependency graph** (R14a) with **live reliability + inference cost** on the Executive Dashboard (R14b/c). Only real usage/adoption/billing telemetry (R14d) is deferred. See the [Phase 3 architecture + workflow diagrams](#phase-3--full-module-parity-live-r10r12).
 
-### Run it locally
-
-```bash
-npm install
-npm run dev          # dev server with HMR (live copy by default)
-npm run build        # tsc typecheck + live app → dist/
-npm run build:all    # live app → dist/ AND seeded demo → dist/seeded/  (what CI deploys)
-npm run preview      # serve the built bundle
-```
-
-No keys or database required. Optional env vars (see [`.env.example`](.env.example)): `VITE_DATA_MODE=seeded`
-builds the retained demo; `VITE_PERSISTENCE_API=<worker-url>` switches persistence from localStorage to the
-shared Neon backend. Locally, the Diagnostic/RAG panels show "unreachable" because those backends allow only
-the `shayeeboy.github.io` origin — they resolve on the deployed site.
-
 ### Demo script (live copy)
 
 1. **Executive Dashboard** (`/executive`) — the front door: KPIs rolled up live from the registry, live snapshots and your persisted data (reachable products, open risks, opportunities scored, live eval pass-rate). Note the honest **"Not reported"** tiles where there's no source — never a seeded number.
@@ -253,7 +253,7 @@ the `shayeeboy.github.io` origin — they resolve on the deployed site.
 - **R4 — Tests.** Vitest + RTL for the scoring/rollup logic; a Playwright smoke suite over primary nav + one workflow per module.
 - **R9 — Refresh cadence.** Scheduled regeneration of the FI `studio-snapshot.json` and RAG `eval/summary.json` so the live snapshots track the latest source data automatically.
 
-**Phase 3 — full module parity, live** — bring every seeded module into the live copy on **Studio-managed data** (registration metadata + user-entered data persisted to R1 Neon), no further source-app changes. **R10–R13, R5 and R14a–c are all shipped** (above) — **the live copy now fully matches the seeded 13-module breadth**, including the dependency graph and live reliability/cost. It runs the Executive, Decision, Governance and Products groups on live + persisted Studio-managed data; only real usage/adoption/billing **telemetry (R14d)** remains, a deliberate deferral. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
+> **Phase 3 module parity is complete** — R10–R13, R5 and R14a–c are shipped (above), so the live copy fully matches the seeded 13-module breadth, including the dependency graph and live reliability/cost. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
 
 **Stretch**
 - **R6 — Auth + multi-tenant** portfolios (per-org seed → per-org data).
