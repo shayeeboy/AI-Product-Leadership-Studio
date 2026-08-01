@@ -115,10 +115,16 @@ Frontend-only. Remaining to full seeded parity: Product Discovery (R5) + telemet
 - **Acceptance:** every Executive Dashboard tile is either a real rollup or an explicit
   "not reported"; no seeded KPI.
 
-### R14 — Deeper source enrichment *(later — real product telemetry)*
-Deferred per the 2026-07-24 decision. Real cost/usage endpoints on the apps (or cloud-billing
-integration), adoption/reliability telemetry, and the product **dependency graph**. Fills the
-"not reported" gaps left by R13 with real product data.
+### R14 — Deeper source enrichment
+Split on completion (2026-08-01):
+- **R14a — product dependency graph. ✅ Shipped.** Persisted `dependency` entity + an SVG graph in
+  Portfolio Governance.
+- **R14b/c — live reliability + inference cost. ✅ Shipped.** Executive Dashboard avg p95 latency +
+  live inference cost (cost/query × volume) from the snapshots already fetched; honest "Not reported"
+  where no source exposes them.
+- **R14d — real usage/adoption/billing telemetry. Deferred (deliberate).** Would need the apps to
+  expose usage/billing or a cloud-billing integration; on free tiers the numbers are ≈ zero, so it's
+  a "wire up when a product has real billing/usage" item rather than a fabricated dashboard.
 
 ---
 

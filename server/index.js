@@ -40,6 +40,7 @@ const ENTITY_TYPES = [
   "roi_scenario",
   "maturity_score",
   "prioritization_input",
+  "dependency",
 ];
 
 export default {

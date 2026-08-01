@@ -7,7 +7,7 @@ import { Card, PageHeader, SectionTitle, StatusBadge, SeverityBadge, EmptyState 
 import { SEVERITY_META, severityScore } from "@/lib/status";
 import { usd } from "@/lib/format";
 import type { Severity } from "@/types/domain";
-import type { Registration } from "../types";
+import type { Registration, EntityRow } from "../types";
 
 const SEV: Severity[] = ["low", "medium", "high"];
 interface RiskData { risk: string; likelihood: Severity; impact: Severity; owner?: string; mitigation?: string; status?: string }
@@ -15,12 +15,14 @@ interface RiskData { risk: string; likelihood: Severity; impact: Severity; owner
 export function LivePortfolioGovernance() {
   const registrations = useLiveStore((s) => s.registrations);
   const riskRows = useLiveStore((s) => s.entities.risk);
+  const deps = useLiveStore((s) => s.entities.dependency);
   const saveEntity = useLiveStore((s) => s.saveEntity);
   const removeEntity = useLiveStore((s) => s.removeEntity);
 
   const [form, setForm] = useState<{ productId: string; risk: string; likelihood: Severity; impact: Severity; owner: string; mitigation: string }>({
     productId: registrations[0]?.id ?? "", risk: "", likelihood: "medium", impact: "medium", owner: "", mitigation: "",
   });
+  const [dep, setDep] = useState<{ from: string; to: string }>({ from: registrations[0]?.id ?? "", to: "" });
 
   const funding = useMemo(
     () => registrations.map((r) => ({ name: r.name.split(" ").slice(0, 2).join(" "), budget: Number(r.annualBudget || 0) })).filter((r) => r.budget > 0).sort((a, b) => b.budget - a.budget),
@@ -43,6 +45,13 @@ export function LivePortfolioGovernance() {
     if (!form.risk.trim()) return;
     await saveEntity("risk", { productId: form.productId || null, data: { risk: form.risk.trim(), likelihood: form.likelihood, impact: form.impact, owner: form.owner || undefined, mitigation: form.mitigation || undefined, status: "open" } });
     setForm((f) => ({ ...f, risk: "", owner: "", mitigation: "" }));
+  }
+
+  async function addDependency(e: React.FormEvent) {
+    e.preventDefault();
+    if (!dep.from || !dep.to.trim()) return;
+    await saveEntity("dependency", { productId: dep.from, data: { to: dep.to.trim() } });
+    setDep((d) => ({ ...d, to: "" }));
   }
 
   return (
@@ -162,7 +171,77 @@ export function LivePortfolioGovernance() {
         </Card>
       </div>
 
-      <p className="mt-4 text-xs text-ink-400">Dependency graph is deferred to roadmap R14 (needs a real dependency data model).</p>
+      {/* Dependency graph (R14a) */}
+      <Card className="mt-6 p-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div>
+            <SectionTitle>Add a dependency</SectionTitle>
+            <form onSubmit={addDependency} className="space-y-2.5">
+              <label className="block text-xs text-ink-500">From product
+                <select value={dep.from} onChange={(e) => setDep((d) => ({ ...d, from: e.target.value }))} className={inputCls}>
+                  {registrations.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </label>
+              <label className="block text-xs text-ink-500">Depends on
+                <input value={dep.to} onChange={(e) => setDep((d) => ({ ...d, to: e.target.value }))} placeholder="e.g. Neon Postgres, Groq, or another product" className={inputCls} />
+              </label>
+              <button type="submit" className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"><PlusCircle className="h-4 w-4" /> Add dependency</button>
+            </form>
+            {deps.length > 0 && (
+              <ul className="mt-3 space-y-1 text-xs">
+                {deps.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between">
+                    <span className="text-ink-600">{productName(d.productId)} → {String((d.data as { to?: string }).to ?? "")}</span>
+                    <button onClick={() => removeEntity("dependency", d.id)} className="text-ink-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="lg:col-span-2">
+            <SectionTitle hint="product → shared infra / model / product">Dependency graph</SectionTitle>
+            <DependencyGraph deps={deps} name={productName} />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function DependencyGraph({ deps, name }: { deps: EntityRow[]; name: (id?: string | null) => string }) {
+  const edges = deps
+    .map((d) => ({ from: d.productId ?? "", to: String((d.data as { to?: string }).to ?? "") }))
+    .filter((e) => e.from && e.to);
+  if (edges.length === 0) {
+    return <EmptyState title="No dependencies mapped" hint="Add one on the left — e.g. a product → “Neon Postgres”, “Groq”, or another product." />;
+  }
+  const leftIds = Array.from(new Set(edges.map((e) => e.from)));
+  const rightLabels = Array.from(new Set(edges.map((e) => e.to)));
+  const rowH = 36;
+  const w = 520;
+  const h = Math.max(leftIds.length, rightLabels.length) * rowH + 24;
+  const y = (i: number) => 24 + i * rowH;
+  const leftX = 130, rightX = w - 130;
+  const trunc = (s: string) => (s.length > 20 ? s.slice(0, 19) + "…" : s);
+  return (
+    <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ minWidth: 360 }} fontFamily="Inter, sans-serif">
+        {edges.map((e, i) => (
+          <line key={i} x1={leftX} y1={y(leftIds.indexOf(e.from))} x2={rightX} y2={y(rightLabels.indexOf(e.to))} stroke="#cbd5e1" strokeWidth={1.5} />
+        ))}
+        {leftIds.map((id, i) => (
+          <g key={id}>
+            <rect x={10} y={y(i) - 12} width={120} height={24} rx={6} fill="#eef4ff" stroke="#c7d7fb" />
+            <text x={70} y={y(i) + 4} textAnchor="middle" fontSize={10} fill="#2244a8">{trunc(name(id))}</text>
+          </g>
+        ))}
+        {rightLabels.map((lbl, i) => (
+          <g key={lbl}>
+            <rect x={w - 130} y={y(i) - 12} width={120} height={24} rx={6} fill="#f1f5f9" stroke="#cbd5e1" />
+            <text x={w - 70} y={y(i) + 4} textAnchor="middle" fontSize={10} fill="#334155">{trunc(lbl)}</text>
+          </g>
+        ))}
+      </svg>
     </div>
   );
 }

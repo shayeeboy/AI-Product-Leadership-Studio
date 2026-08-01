@@ -39,6 +39,21 @@ export function LiveExecutiveDashboard() {
     const allEval = okResults.flatMap((d) => (d.ok ? ((d.data as LiveRagHealth)?.evaluationMetrics ?? []) : []));
     const evalPass = allEval.length ? Math.round((allEval.filter((m) => m.pass).length / allEval.length) * 100) : null;
 
+    // R14b/c — reliability (p95 latency) + live inference cost, from snapshots that expose them.
+    const p95s: number[] = [];
+    let liveCost = 0;
+    let costSeen = false;
+    for (const d of okResults) {
+      if (!d.ok) continue;
+      const rd = d.data as Partial<LiveRagHealth>;
+      if (typeof rd?.latencyMsP95 === "number") p95s.push(rd.latencyMsP95);
+      if (typeof rd?.costPerQuery === "number" && rd.observability && typeof rd.observability.total === "number") {
+        liveCost += rd.costPerQuery * rd.observability.total;
+        costSeen = true;
+      }
+    }
+    const avgP95 = p95s.length ? Math.round(p95s.reduce((a, b) => a + b, 0) / p95s.length) : null;
+
     const spend = registrations.reduce((sum, r) => sum + Number(r.monthlySpend || 0), 0);
     const roiTargets = registrations.map((r) => Number(r.roiTarget || 0)).filter((n) => n > 0);
     const blendedRoi = roiTargets.length ? Math.round(roiTargets.reduce((a, b) => a + b, 0) / roiTargets.length) : null;
@@ -57,6 +72,7 @@ export function LiveExecutiveDashboard() {
       pendingGovernance: pendingReviews + pendingStages,
       atRisk: atRiskIds.size,
       opportunities: assessments.length,
+      avgP95, liveCost: costSeen ? liveCost : null,
     };
   }, [snapshots, registrations, assessments, risks, reviews, workflow]);
 
@@ -85,7 +101,8 @@ export function LiveExecutiveDashboard() {
         <KpiTile label="Evaluation pass rate" value={roll.evalPass != null ? pct(roll.evalPass) : NR} intent={roll.evalPass != null && roll.evalPass >= 70 ? "up" : "neutral"} footnote={roll.evalPass != null ? "live" : "no source"} />
         <KpiTile label="Monthly AI spend" value={roll.spend > 0 ? usd(roll.spend, true) : NR} footnote={roll.spend > 0 ? "sum of registrations" : "add on registration"} />
         <KpiTile label="Blended ROI target" value={roll.blendedRoi != null ? pct(roll.blendedRoi) : NR} footnote={roll.blendedRoi != null ? "avg of registrations" : "no target set"} />
-        <KpiTile label="Real cost / adoption" value={NR} footnote="R14 — telemetry" />
+        <KpiTile label="Live inference cost" value={roll.liveCost != null ? usd(roll.liveCost) : NR} footnote={roll.liveCost != null ? "cost/query × volume (R14c)" : "no source"} />
+        <KpiTile label="Avg latency p95" value={roll.avgP95 != null ? `${(roll.avgP95 / 1000).toFixed(1)}s` : NR} footnote={roll.avgP95 != null ? "live reliability (R14b)" : "no source"} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -117,7 +134,8 @@ export function LiveExecutiveDashboard() {
             <strong>{roll.pendingGovernance}</strong> item{roll.pendingGovernance === 1 ? "" : "s"} awaiting a decision.{" "}
             {roll.opportunities > 0 ? <>You've scored <strong>{roll.opportunities}</strong> opportunit{roll.opportunities === 1 ? "y" : "ies"}. </> : <>No opportunities scored yet. </>}
             {roll.evalPass != null ? <>Live evaluation pass rate is <strong>{pct(roll.evalPass)}</strong>. </> : <>No product reports evaluation metrics live. </>}
-            Spend and adoption are <strong>Not reported</strong> until captured on registration or wired as telemetry (R14).
+            {roll.avgP95 != null || roll.liveCost != null ? <>Reliability and inference cost are computed live where a source exposes them. </> : null}
+            Adoption remains <strong>Not reported</strong> — real usage/billing telemetry is a deliberate deferral (R14d).
           </p>
         </Card>
       </div>
@@ -127,17 +145,20 @@ export function LiveExecutiveDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wide text-ink-500">
-              <tr><th className="px-5 py-2.5">Product</th><th className="px-3 py-2.5">Source</th><th className="px-3 py-2.5">Business unit</th><th className="px-3 py-2.5 text-right">Open risks</th><th className="px-3 py-2.5 text-right">Monthly</th></tr>
+              <tr><th className="px-5 py-2.5">Product</th><th className="px-3 py-2.5">Source</th><th className="px-3 py-2.5">Business unit</th><th className="px-3 py-2.5 text-right">p95</th><th className="px-3 py-2.5 text-right">Open risks</th><th className="px-3 py-2.5 text-right">Monthly</th></tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {registrations.map((p, i) => {
                 const ok = snapshots[i]?.data?.ok;
                 const loading = snapshots[i]?.isLoading;
+                const rd = ok ? (snapshots[i]!.data!.data as Partial<LiveRagHealth>) : undefined;
+                const p95 = typeof rd?.latencyMsP95 === "number" ? rd.latencyMsP95 : null;
                 return (
                   <tr key={p.id} className="hover:bg-ink-50">
                     <td className="px-5 py-2.5"><Link to={`/product/${p.id}`} className="font-medium text-brand-600 hover:underline">{p.name}</Link></td>
                     <td className="px-3 py-2.5"><span className={`inline-flex items-center gap-1.5 text-xs ${ok ? "text-emerald-600" : loading ? "text-slate-400" : "text-red-500"}`}><span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : loading ? "bg-slate-300" : "bg-red-500"}`} />{ok ? "Live" : loading ? "Checking…" : "Down"}</span></td>
                     <td className="px-3 py-2.5 text-ink-600">{p.businessUnit ?? "—"}</td>
+                    <td className="px-3 py-2.5 text-right text-ink-700">{p95 != null ? `${(p95 / 1000).toFixed(1)}s` : "—"}</td>
                     <td className="px-3 py-2.5 text-right text-ink-700">{productRisks(p.id) || "—"}</td>
                     <td className="px-3 py-2.5 text-right text-ink-700">{p.monthlySpend ? usd(Number(p.monthlySpend), true) : "—"}</td>
                   </tr>

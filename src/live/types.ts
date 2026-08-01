@@ -43,6 +43,7 @@ export const ENTITY_TYPES = [
   "roi_scenario",
   "maturity_score",
   "prioritization_input",
+  "dependency",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
