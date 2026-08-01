@@ -49,6 +49,7 @@ Free + Cloudflare Workers Free).
 | POST | `/api/workflow` | `{productId, stage, status, reviewer, comment, actor}` | advance a governance stage (+ audit) |
 | POST | `/api/entity/:name` | `{id?, productId?, data}` | upsert a Studio-managed entity (R10) |
 | DELETE | `/api/entity/:name/:id` | — | delete a Studio-managed entity (R10) |
+| POST | `/api/assist` | `{prompt}` | optional LLM assist for Product Discovery (R5); `501` when unconfigured |
 
 `adapterType` ∈ `readiness | rag-health | financial | health`. `endpointUrl` is
 the product's live snapshot endpoint (nullable for manual entries).
@@ -63,3 +64,18 @@ The schema changes are additive (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF
 NOT EXISTS`), so to pick up R10:
 1. Re-apply `server/schema.sql` in the Neon SQL editor (safe to re-run).
 2. Redeploy the Worker: `npm run worker:deploy`.
+
+### Enabling the optional LLM assist (R5)
+
+Product Discovery works **keyless** (templated) out of the box. To upgrade it to a live LLM, add a
+key server-side and redeploy — the key never touches the browser, and the client falls back to
+templates automatically if the endpoint is unavailable:
+
+```bash
+npx wrangler secret put ASSIST_API_KEY     # e.g. a Groq key (free tier)
+# optional [vars] in wrangler.toml: ASSIST_BASE_URL (default Groq), ASSIST_MODEL
+npm run worker:deploy
+```
+
+`VITE_PERSISTENCE_API` already points the client at the Worker, so no frontend change is needed —
+Product Discovery's "templated" badge flips to "AI assist (live)" once the key is set.

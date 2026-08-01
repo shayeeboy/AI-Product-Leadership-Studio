@@ -3,10 +3,11 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb,
 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { LiveExecutiveDashboard } from "./LiveExecutiveDashboard";
+import { LiveProductDiscovery } from "./LiveProductDiscovery";
 import { LivePortfolio } from "./LivePortfolio";
 import { LiveProductDetail } from "./LiveProductDetail";
 import { RegisterProduct } from "./RegisterProduct";
@@ -54,6 +55,7 @@ const NAV_GROUPS = [
     layer: "Products",
     items: [
       { to: "/", label: "Live Portfolio", icon: LayoutGrid, end: true },
+      { to: "/discovery", label: "Product Discovery", icon: Lightbulb, end: false },
       { to: "/register", label: "Register a product", icon: PlusCircle, end: false },
     ],
   },
@@ -138,6 +140,7 @@ export function LiveApp() {
               <Routes>
                 <Route path="/" element={<LivePortfolio />} />
                 <Route path="/executive" element={<LiveExecutiveDashboard />} />
+                <Route path="/discovery" element={<LiveProductDiscovery />} />
                 <Route path="/product/:id" element={<LiveProductDetail />} />
                 <Route path="/register" element={<RegisterProduct />} />
                 <Route path="/cross" element={<CrossProductLive />} />

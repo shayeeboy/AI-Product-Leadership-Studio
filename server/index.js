@@ -10,10 +10,14 @@
 //   POST /api/workflow {productId,stage,status,reviewer,comment,actor} → advance a stage (+ audit)
 //   POST /api/entity/:name {id?,productId?,data}       → upsert a Studio-managed entity (R10)
 //   DELETE /api/entity/:name/:id                       → delete a Studio-managed entity (R10)
+//   POST /api/assist {prompt}                          → optional LLM assist (R5); 501 if unconfigured
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
-//   DATABASE_URL    Neon connection string           (secret)
-//   ALLOWED_ORIGIN  Pages origin allowed to call it   (var)
+//   DATABASE_URL     Neon connection string                 (secret)
+//   ALLOWED_ORIGIN   Pages origin allowed to call it         (var)
+//   ASSIST_API_KEY   optional LLM key for /api/assist         (secret)
+//   ASSIST_BASE_URL  optional OpenAI-compatible base URL      (var, default Groq)
+//   ASSIST_MODEL     optional model id                        (var)
 import { neon } from "@neondatabase/serverless";
 
 const WORKFLOW_STAGES = [
@@ -155,6 +159,40 @@ export default {
         await sql`INSERT INTO audit_events (product_id, actor, action, stage, note)
           VALUES (${b.productId}, ${b.actor || b.reviewer || "Reviewer"}, ${statusVerb(status) + " " + b.stage}, ${b.stage}, ${b.comment || null})`;
         return json({ ok: true, stage: row }, 200, cors);
+      }
+
+      // --- Optional LLM assist (R5, Product Discovery) ---
+      // Opt-in: set the ASSIST_API_KEY secret (+ optional ASSIST_BASE_URL / ASSIST_MODEL).
+      // Unconfigured → 501, and the client falls back to its template. The LLM key
+      // stays server-side; the browser never sees it.
+      if (p === "/api/assist" && request.method === "POST") {
+        if (!env.ASSIST_API_KEY) return json({ error: "assist not configured" }, 501, cors);
+        const b = await request.json().catch(() => ({}));
+        const prompt = String(b.prompt || "").slice(0, 2000);
+        if (!prompt.trim()) return json({ error: "prompt required" }, 400, cors);
+        const base = (env.ASSIST_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/$/, "");
+        const model = env.ASSIST_MODEL || "llama-3.3-70b-versatile";
+        try {
+          const r = await fetch(`${base}/chat/completions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.ASSIST_API_KEY}` },
+            body: JSON.stringify({
+              model,
+              max_tokens: 450,
+              temperature: 0.4,
+              messages: [
+                { role: "system", content: "You are a product-discovery assistant for an AI product leader. Given a user and a problem/JTBD, respond with a crisp one-paragraph problem statement, then three numbered opportunity hypotheses. Be concrete and brief." },
+                { role: "user", content: prompt },
+              ],
+            }),
+          });
+          if (!r.ok) return json({ error: `assist upstream ${r.status}` }, 502, cors);
+          const d = await r.json();
+          const text = d?.choices?.[0]?.message?.content ?? "";
+          return json({ text, mode: "llm" }, 200, cors);
+        } catch (e) {
+          return json({ error: String(e.message || e) }, 502, cors);
+        }
       }
 
       return json({ error: "Not found" }, 404, cors);
