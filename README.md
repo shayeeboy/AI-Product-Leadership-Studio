@@ -12,9 +12,9 @@ It got there in three phases, each building on the last without breaking the one
 - **Phase 2 — live integration.** A **registry-driven** live copy that reads each real app's own snapshot endpoint (no seed), with a Register-a-product flow for future apps and optional shared persistence.
 - **Phase 3 — full module parity, live.** The decision and governance toolset now runs in the live copy on real, persisted **Studio-managed data** — register → assess → prioritize → govern → evaluate — not seed.
 
-Because every module was written against a stable data *contract*, each phase swapped the source, not the screens.
+Because every module was written against a stable data *contract*, each phase swapped the source, not the screens. Each phase is made of numbered milestones — **roadmap items** like R1, R2, R10 — introduced in that phase's section below and tracked in full in the [roadmap](#improvement-roadmap).
 
-**Contents:** [See it live](#see-it-live) · [Executive summary](#executive-summary) · [Phase 2 — Live integration](#phase-2--live-integration-r1--r2) · [Phase 3 — Full module parity](#phase-3--full-module-parity-live-r10r12) · [Run it locally](#run-it-locally-and-deploy) · [How it works](#how-it-works) · [Lessons learned](#lessons-learned) · [Roadmap](#improvement-roadmap) · [Positioning](#positioning)
+**Contents:** [See it live](#see-it-live) · [Executive summary](#executive-summary) · [Phase 1 — Seeded platform](#phase-1--seeded-platform) · [Phase 2 — Live integration](#phase-2--live-integration) · [Phase 3 — Full module parity](#phase-3--full-module-parity-live) · [Run it locally](#run-it-locally-and-deploy) · [How it works](#how-it-works) · [Lessons learned](#lessons-learned) · [Roadmap](#improvement-roadmap) · [Positioning](#positioning)
 
 ---
 
@@ -55,9 +55,23 @@ for a few seconds on first load.
 
 ---
 
-## Phase 2 — Live integration (R1 + R2)
+## Phase 1 — Seeded platform
 
-The live copy is **registry-driven**: every product is a *registration* (name, owner, adapter
+The first build was the whole executive Studio over a **seeded** 12-product portfolio — all 13
+modules, the three-layer model (Executive / Governance / Decision), one reusable governance workflow
+engine, and typed adapters reading seed fixtures — shipped as a static bundle to GitHub Pages for
+**$0**. The point was to prove the *judgment* (the modules and how they interlock) against stable
+data, so the later phases could swap in real, live sources **without touching the screens**.
+
+It's retained, untouched, at [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/)
+as a breadth demo, and its architecture is the blueprint the live copy grew into — walked through in
+[How it works](#how-it-works).
+
+---
+
+## Phase 2 — Live integration
+
+Phase 2 (**R2** + **R1**) makes the Studio *live*. The live copy is **registry-driven**: every product is a *registration* (name, owner, adapter
 type, and a live snapshot endpoint), and the Studio renders whatever each endpoint returns —
 never seeded numbers. The three real apps ship as **default registrations**; a **Register-a-product**
 flow adds any future app by pointing at its snapshot endpoint (it enters governance at the
@@ -89,9 +103,9 @@ Studio is verified pulling real data (and persisting writes) in production (see 
 
 ---
 
-## Phase 3 — Full module parity, live (R10–R12)
+## Phase 3 — Full module parity, live
 
-Phase 2 made the live copy *real* but *lean* — a portfolio of live products plus a few governance
+Phase 3 (**R10–R14**) is the push to full parity. Phase 2 made the live copy *real* but *lean* — a portfolio of live products plus a few governance
 screens. Phase 3 brings the **whole executive toolset** into the live copy, on one principle:
 everything a module shows must be **real** — either live from a source (Phase 2) or **Studio-managed**
 data you enter and it persists. No seed, ever; a missing input shows an honest empty state.
@@ -161,7 +175,7 @@ workflow auto-publishes every push to `main` to **[the live site above](https://
 - [Feature modules](#feature-modules)
 - [Demo scripts](#demo-script-live-copy)
 
-> The sections below document the **seeded phase-1 build** (the retained [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/) demo) — its three-layer model, 13 modules and seeded adapters, which are the *architectural blueprint* the live copy later grew into. The **live copy's** evolution is covered above: [Phase 2](#phase-2--live-integration-r1--r2) (registry, live adapters, enriched endpoints, persistence) and [Phase 3](#phase-3--full-module-parity-live-r10r12) (the full decision + governance module set on Studio-managed data).
+> The sections below document the **seeded phase-1 build** (the retained [`/seeded/`](https://shayeeboy.github.io/AI-Product-Leadership-Studio/seeded/) demo) — its three-layer model, 13 modules and seeded adapters, which are the *architectural blueprint* the live copy later grew into. The **live copy's** evolution is covered above: [Phase 2](#phase-2--live-integration) (registry, live adapters, enriched endpoints, persistence) and [Phase 3](#phase-3--full-module-parity-live) (the full decision + governance module set on Studio-managed data).
 
 ### Architecture
 
@@ -205,7 +219,7 @@ The **seeded demo** ships all 13 under the app shell:
 
 The interactive ones — Opportunity Assessment, Build vs Buy, Cost Analyzer, ROI Simulator, Investment Prioritization, Maturity — recompute outputs from your inputs live. Opportunity scores flow into Investment Prioritization with no re-entry.
 
-The **live copy**, through Phase 3, now carries the same groups on the left-rail shell — **Executive** (Executive Dashboard, Cross-Product Intelligence), the full **Decision** group (Opportunity Assessment, Investment Prioritization, Build vs Buy, Cost Analyzer, ROI Simulator, Maturity Assessment), **Governance** group (Portfolio Governance, Responsible AI Center, Human Approval Center, Evaluation Dashboard) and **Products** (Live Portfolio, Product Discovery, Register) — all on live + persisted Studio-managed data. It now **matches the seeded 13-module breadth**, and Portfolio Governance carries the **dependency graph** (R14a) with **live reliability + inference cost** on the Executive Dashboard (R14b/c). Only real usage/adoption/billing telemetry (R14d) is deferred. See the [Phase 3 architecture + workflow diagrams](#phase-3--full-module-parity-live-r10r12).
+The **live copy**, through Phase 3, now carries the same groups on the left-rail shell — **Executive** (Executive Dashboard, Cross-Product Intelligence), the full **Decision** group (Opportunity Assessment, Investment Prioritization, Build vs Buy, Cost Analyzer, ROI Simulator, Maturity Assessment), **Governance** group (Portfolio Governance, Responsible AI Center, Human Approval Center, Evaluation Dashboard) and **Products** (Live Portfolio, Product Discovery, Register) — all on live + persisted Studio-managed data. It now **matches the seeded 13-module breadth**, and Portfolio Governance carries the **dependency graph** (R14a) with **live reliability + inference cost** on the Executive Dashboard (R14b/c). Only real usage/adoption/billing telemetry (R14d) is deferred. See the [Phase 3 architecture + workflow diagrams](#phase-3--full-module-parity-live).
 
 ### Demo script (live copy)
 
