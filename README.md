@@ -270,7 +270,7 @@ The **live copy**, through Phase 3, now carries the same groups on the left-rail
 > **Phase 3 module parity is complete** — R10–R13, R5 and R14a–c are shipped (above), so the live copy fully matches the seeded 13-module breadth, including the dependency graph and live reliability/cost. Full plan: [`docs/PHASE-3-PLAN.md`](docs/PHASE-3-PLAN.md).
 
 **Stretch**
-- **R6 — Auth + multi-tenant** portfolios (per-org seed → per-org data).
+- **R6 — Auth + user management + multi-tenant.** Real sign-in and per-user identity (governance actions currently attribute to a lightweight device-local **"Acting as"** name, default *You* — set in the top bar), plus role-based approvals (who may approve which stage) and per-org portfolios (per-org data).
 - **R7 — Export** board-ready PDF/deck from the Executive Dashboard and Cross-Product scorecard.
 - **R8 — Real observability** across all products (the RAG panel already shows live traces/latency/cost; extend to the others as their endpoints expose it).
 - **R14d — Real usage/adoption/billing telemetry (deferred, deliberately).** The last "Not reported" tiles (adoption, cloud spend) would need the apps to expose usage/billing endpoints or a cloud-billing integration; on free tiers the real numbers are ≈ zero, so this is left as a "wire it up when a product has real billing/usage" item rather than fabricated. *(R14a–c — dependency graph + live reliability/cost — shipped; see above and [trade-off #7](#key-trade-off-decisions).)*

@@ -6,13 +6,13 @@ import { WORKFLOW_STAGES } from "@/types/domain";
 import type { ProductWorkflow, StageStatus, WorkflowStageName } from "@/types/domain";
 import { shortDate } from "@/lib/format";
 
-const ACTOR = "S. Adeyemi (You)";
-
 export function LiveGovernance() {
   const registrations = useLiveStore((s) => s.registrations);
   const workflowRows = useLiveStore((s) => s.workflow);
   const audit = useLiveStore((s) => s.audit);
   const advance = useLiveStore((s) => s.advance);
+  const identity = useLiveStore((s) => s.identity);
+  const ACTOR = identity.trim() || "You"; // the current reviewer (set in the top bar)
 
   function workflowFor(id: string): ProductWorkflow {
     return {

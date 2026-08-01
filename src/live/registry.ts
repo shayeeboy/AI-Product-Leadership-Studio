@@ -9,7 +9,7 @@ export const DEFAULT_REGISTRATIONS: Registration[] = [
     id: "ai-native-diagnostic",
     name: "AI-Native Team Diagnostic",
     businessUnit: "People & Enablement",
-    owner: "S. Adeyemi",
+    owner: undefined, // set yours via registration/edit — no fabricated name
     sponsor: "VP, Transformation",
     architecture: "SaaS",
     adapterType: "readiness",
@@ -21,7 +21,7 @@ export const DEFAULT_REGISTRATIONS: Registration[] = [
     id: "enterprise-rag",
     name: "Enterprise RAG Assistant",
     businessUnit: "Knowledge & Support",
-    owner: "S. Adeyemi",
+    owner: undefined, // set yours via registration/edit — no fabricated name
     sponsor: "Head of Support",
     architecture: "RAG",
     adapterType: "rag-health",
@@ -33,7 +33,7 @@ export const DEFAULT_REGISTRATIONS: Registration[] = [
     id: "financial-intelligence",
     name: "Financial Intelligence Strategy Agent",
     businessUnit: "Strategy & Finance",
-    owner: "S. Adeyemi",
+    owner: undefined, // set yours via registration/edit — no fabricated name
     sponsor: "CFO Office",
     architecture: "Agentic",
     adapterType: "financial",
