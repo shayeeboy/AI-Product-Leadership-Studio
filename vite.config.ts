@@ -15,5 +15,15 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Keep the Recharts + d3 charting stack in one vendor chunk so it is
+        // fetched once and cached across every charting route, rather than
+        // duplicated into each route's lazy chunk (R3 code-splitting).
+        manualChunks: {
+          recharts: ["recharts"],
+        },
+      },
+    },
   },
 });

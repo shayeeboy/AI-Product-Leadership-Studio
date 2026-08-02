@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import {
@@ -6,22 +6,30 @@ import {
   Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb,
 } from "lucide-react";
 import { useLiveStore } from "../store";
-import { LiveExecutiveDashboard } from "./LiveExecutiveDashboard";
-import { LiveProductDiscovery } from "./LiveProductDiscovery";
-import { LivePortfolio } from "./LivePortfolio";
-import { LiveProductDetail } from "./LiveProductDetail";
-import { RegisterProduct } from "./RegisterProduct";
-import { CrossProductLive } from "./CrossProductLive";
-import { LiveGovernance } from "./LiveGovernance";
-import { LivePortfolioGovernance } from "./LivePortfolioGovernance";
-import { LiveResponsibleAiCenter } from "./LiveResponsibleAiCenter";
-import { LiveEvaluationDashboard } from "./LiveEvaluationDashboard";
-import { LiveOpportunityAssessment } from "./LiveOpportunityAssessment";
-import { LiveInvestmentPrioritization } from "./LiveInvestmentPrioritization";
-import { LiveRoiSimulator } from "./LiveRoiSimulator";
-import { LiveCostAnalyzer } from "./LiveCostAnalyzer";
-import { LiveMaturityAssessment } from "./LiveMaturityAssessment";
-import { BuildVsBuy } from "@/modules/build-vs-buy/BuildVsBuy"; // seed-free calculator — reused as-is
+import { LivePortfolio } from "./LivePortfolio"; // the "/" landing route — kept eager so first paint has no chunk wait
+
+// Every other route is code-split (R3): each becomes its own chunk, so the
+// Recharts-heavy modules load on demand instead of inflating first load.
+const lazyNamed = <T extends Record<string, React.ComponentType<any>>>(
+  loader: () => Promise<T>,
+  name: keyof T,
+) => lazy(() => loader().then((m) => ({ default: m[name] })));
+
+const LiveExecutiveDashboard = lazyNamed(() => import("./LiveExecutiveDashboard"), "LiveExecutiveDashboard");
+const LiveProductDiscovery = lazyNamed(() => import("./LiveProductDiscovery"), "LiveProductDiscovery");
+const LiveProductDetail = lazyNamed(() => import("./LiveProductDetail"), "LiveProductDetail");
+const RegisterProduct = lazyNamed(() => import("./RegisterProduct"), "RegisterProduct");
+const CrossProductLive = lazyNamed(() => import("./CrossProductLive"), "CrossProductLive");
+const LiveGovernance = lazyNamed(() => import("./LiveGovernance"), "LiveGovernance");
+const LivePortfolioGovernance = lazyNamed(() => import("./LivePortfolioGovernance"), "LivePortfolioGovernance");
+const LiveResponsibleAiCenter = lazyNamed(() => import("./LiveResponsibleAiCenter"), "LiveResponsibleAiCenter");
+const LiveEvaluationDashboard = lazyNamed(() => import("./LiveEvaluationDashboard"), "LiveEvaluationDashboard");
+const LiveOpportunityAssessment = lazyNamed(() => import("./LiveOpportunityAssessment"), "LiveOpportunityAssessment");
+const LiveInvestmentPrioritization = lazyNamed(() => import("./LiveInvestmentPrioritization"), "LiveInvestmentPrioritization");
+const LiveRoiSimulator = lazyNamed(() => import("./LiveRoiSimulator"), "LiveRoiSimulator");
+const LiveCostAnalyzer = lazyNamed(() => import("./LiveCostAnalyzer"), "LiveCostAnalyzer");
+const LiveMaturityAssessment = lazyNamed(() => import("./LiveMaturityAssessment"), "LiveMaturityAssessment");
+const BuildVsBuy = lazyNamed(() => import("@/modules/build-vs-buy/BuildVsBuy"), "BuildVsBuy"); // seed-free calculator — reused as-is
 
 const NAV_GROUPS = [
   {
@@ -143,6 +151,7 @@ export function LiveApp() {
             {!loaded ? (
               <div className="p-16 text-center text-ink-400">Loading portfolio…</div>
             ) : (
+              <Suspense fallback={<div className="p-16 text-center text-ink-400">Loading…</div>}>
               <Routes>
                 <Route path="/" element={<LivePortfolio />} />
                 <Route path="/executive" element={<LiveExecutiveDashboard />} />
@@ -162,6 +171,7 @@ export function LiveApp() {
                 <Route path="/maturity" element={<LiveMaturityAssessment />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </Suspense>
             )}
           </div>
         </main>
