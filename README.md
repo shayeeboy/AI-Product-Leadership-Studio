@@ -273,6 +273,8 @@ The **live copy**, through Phase 3, now carries the same groups on the left-rail
 - **R8 — Real observability** across all products (the RAG panel already shows live traces/latency/cost; extend to the others as their endpoints expose it).
 - **R14d — Real usage/adoption/billing telemetry (deferred, deliberately).** The last "Not reported" tiles (adoption, cloud spend) would need the apps to expose usage/billing endpoints or a cloud-billing integration; on free tiers the real numbers are ≈ zero, so this is left as a "wire it up when a product has real billing/usage" item rather than fabricated. *(R14a–c — dependency graph + live reliability/cost — shipped; see above and [trade-off #7](#key-trade-off-decisions).)*
 
+> **R7 → R8 → R6 are scoped for execution** (value-over-effort order) in [`docs/STRETCH-PLAN.md`](docs/STRETCH-PLAN.md); R14d stays deferred.
+
 ---
 
 ## Positioning
