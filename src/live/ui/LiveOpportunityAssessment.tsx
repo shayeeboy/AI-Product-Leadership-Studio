@@ -4,30 +4,7 @@ import { useLiveStore } from "../store";
 import { Card, PageHeader, SectionTitle, RecommendationBadge, EmptyState } from "@/shared/components/ui";
 import { pct, shortDate } from "@/lib/format";
 import type { AssessmentRow } from "../persistence";
-
-// Weighted scoring (same model as the seeded module). "Technical Complexity" and
-// "Risk" are inverse: a high value there lowers the score.
-const DIMENSIONS: { key: string; weight: number; inverse?: boolean }[] = [
-  { key: "Business Value", weight: 1.4 },
-  { key: "Customer Impact", weight: 1.2 },
-  { key: "AI Suitability", weight: 1.2 },
-  { key: "Data Readiness", weight: 1.0 },
-  { key: "Technical Complexity", weight: 0.8, inverse: true },
-  { key: "Risk", weight: 1.0, inverse: true },
-  { key: "ROI", weight: 1.3 },
-  { key: "Strategic Alignment", weight: 1.1 },
-];
-
-function rollup(scores: Record<string, number>) {
-  let weighted = 0;
-  let total = 0;
-  for (const d of DIMENSIONS) {
-    const raw = scores[d.key] ?? 50;
-    weighted += (d.inverse ? 100 - raw : raw) * d.weight;
-    total += d.weight;
-  }
-  return Math.round(weighted / total);
-}
+import { OPPORTUNITY_DIMENSIONS as DIMENSIONS, rollupOpportunity as rollup } from "@/lib/scoring";
 
 function classify(score: number): { rec: AssessmentRow["recommendation"]; fit: string; conf: string } {
   if (score >= 75) return { rec: "Fund now", fit: "High", conf: "High" };

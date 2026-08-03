@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend } from "recharts";
 import { Card, PageHeader, SectionTitle, KpiTile } from "@/shared/components/ui";
+import { maturityOverall, maturityGaps } from "@/lib/scoring";
 
 const DIMENSIONS = [
   "Strategy", "Governance", "Data", "Talent", "AI Engineering", "MLOps",
@@ -20,11 +21,8 @@ export function MaturityAssessment() {
   const [current, setCurrent] = useState(CURRENT);
   const data = DIMENSIONS.map((d) => ({ dimension: d, Current: current[d], Target: TARGET[d] }));
 
-  const gaps = useMemo(
-    () => DIMENSIONS.map((d) => ({ d, gap: TARGET[d] - current[d] })).filter((g) => g.gap > 0).sort((a, b) => b.gap - a.gap),
-    [current],
-  );
-  const overall = (Object.values(current).reduce((a, b) => a + b, 0) / DIMENSIONS.length).toFixed(1);
+  const gaps = useMemo(() => maturityGaps(current, TARGET, DIMENSIONS), [current]);
+  const overall = maturityOverall(current, DIMENSIONS).toFixed(1);
 
   return (
     <div>

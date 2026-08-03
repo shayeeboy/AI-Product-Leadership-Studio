@@ -4,31 +4,7 @@ import { OPPORTUNITY_ASSESSMENTS } from "@/seed/governance";
 import { Card, PageHeader, SectionTitle, RecommendationBadge } from "@/shared/components/ui";
 import { pct } from "@/lib/format";
 import type { OpportunityAssessment as OA } from "@/types/domain";
-
-// Weighted scoring dimensions (Section 6.4). Higher weight = more influence.
-// "Technical Complexity" and "Risk" are inverse: high value there lowers the score.
-const DIMENSIONS: { key: string; weight: number; inverse?: boolean }[] = [
-  { key: "Business Value", weight: 1.4 },
-  { key: "Customer Impact", weight: 1.2 },
-  { key: "AI Suitability", weight: 1.2 },
-  { key: "Data Readiness", weight: 1.0 },
-  { key: "Technical Complexity", weight: 0.8, inverse: true },
-  { key: "Risk", weight: 1.0, inverse: true },
-  { key: "ROI", weight: 1.3 },
-  { key: "Strategic Alignment", weight: 1.1 },
-];
-
-function rollup(scores: Record<string, number>) {
-  let weighted = 0;
-  let totalWeight = 0;
-  for (const d of DIMENSIONS) {
-    const raw = scores[d.key] ?? 50;
-    const effective = d.inverse ? 100 - raw : raw;
-    weighted += effective * d.weight;
-    totalWeight += d.weight;
-  }
-  return Math.round(weighted / totalWeight);
-}
+import { OPPORTUNITY_DIMENSIONS as DIMENSIONS, rollupOpportunity as rollup } from "@/lib/scoring";
 
 function classify(score: number): { rec: OA["recommendation"]; fit: OA["strategicFit"]; conf: OA["confidence"] } {
   if (score >= 75) return { rec: "Fund now", fit: "High", conf: "High" };

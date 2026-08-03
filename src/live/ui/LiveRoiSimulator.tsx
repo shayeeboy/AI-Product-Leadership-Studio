@@ -4,31 +4,9 @@ import { Trash2 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { Card, PageHeader, SectionTitle, KpiTile, EmptyState } from "@/shared/components/ui";
 import { usd, pct, shortDate } from "@/lib/format";
+import { simulateRoi as simulate, type RoiInputs as Inputs } from "@/lib/scoring";
 
-interface Inputs {
-  investment: number; engCostMonthly: number; licensingMonthly: number; infraMonthly: number; peakBenefitMonthly: number; rampMonths: number;
-}
 const ADOPTION: Record<string, number> = { Base: 1, Upside: 1.4, Downside: 0.6 };
-
-function simulate(inp: Inputs, adoptionMult: number) {
-  const months = 24;
-  const monthlyCost = inp.engCostMonthly + inp.licensingMonthly + inp.infraMonthly;
-  let cumulative = -inp.investment;
-  let payback: number | null = null;
-  const series: { month: number; benefit: number; cumulative: number }[] = [];
-  let totalBenefit = 0;
-  for (let m = 1; m <= months; m++) {
-    const benefit = inp.peakBenefitMonthly * Math.min(1, m / inp.rampMonths) * adoptionMult;
-    totalBenefit += benefit;
-    cumulative += benefit - monthlyCost;
-    if (payback === null && cumulative >= 0) payback = m;
-    series.push({ month: m, benefit: Math.round(benefit), cumulative: Math.round(cumulative) });
-  }
-  const totalCost = inp.investment + monthlyCost * months;
-  const roi = Math.round(((totalBenefit - totalCost) / totalCost) * 100);
-  const npv = Math.round(series.reduce((acc, s, i) => acc + (s.benefit - monthlyCost) / Math.pow(1.008, i + 1), -inp.investment));
-  return { series, roi, payback, npv };
-}
 
 export function LiveRoiSimulator() {
   const scenarios = useLiveStore((s) => s.entities.roi_scenario);

@@ -3,6 +3,7 @@ import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Toolti
 import { PRODUCTS } from "@/seed/products";
 import { OPPORTUNITY_ASSESSMENTS } from "@/seed/governance";
 import { Card, PageHeader, SectionTitle } from "@/shared/components/ui";
+import { scoreOf, FRAMEWORKS, type Framework } from "@/lib/scoring";
 
 // Candidate = a product plus prioritization inputs. Opportunity scores are
 // pulled from the Opportunity Assessment module rather than re-entered.
@@ -32,21 +33,6 @@ const CANDIDATES: Candidate[] = PRODUCTS.filter((p) => p.status !== "archived").
   opportunity: OPP[p.id] ?? 50 + ((i * 11) % 40),
 }));
 
-type Framework = "RICE" | "WSJF" | "Value vs Effort" | "Opportunity";
-
-function scoreOf(c: Candidate, fw: Framework): number {
-  switch (fw) {
-    case "RICE":
-      return Math.round((c.reach * c.impact * c.confidence) / c.effort);
-    case "WSJF":
-      return Math.round((c.value + c.jobSize * 8) / c.effort);
-    case "Value vs Effort":
-      return Math.round((c.value / c.effort) * 10);
-    case "Opportunity":
-      return c.opportunity;
-  }
-}
-
 export function InvestmentPrioritization() {
   const [fw, setFw] = useState<Framework>("RICE");
 
@@ -66,7 +52,7 @@ export function InvestmentPrioritization() {
         subtitle="Rank the portfolio under multiple frameworks. Opportunity scores flow in from the Assessment module — no re-entry."
         actions={
           <div className="flex flex-wrap gap-1.5">
-            {(["RICE", "WSJF", "Value vs Effort", "Opportunity"] as Framework[]).map((f) => (
+            {FRAMEWORKS.map((f) => (
               <button key={f} onClick={() => setFw(f)} className={`rounded-full px-3 py-1 text-xs font-medium ${fw === f ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-600 hover:bg-ink-200"}`}>{f}</button>
             ))}
           </div>

@@ -13,5 +13,11 @@ dist-ssr
 # TS build info
 *.tsbuildinfo
 
+# Playwright e2e artifacts (browsers are installed on demand, not tracked)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Local-only reproducibility archive — never tracked/cloned/forked
 .git_prompts/

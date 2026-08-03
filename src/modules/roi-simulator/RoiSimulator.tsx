@@ -2,42 +2,13 @@ import { useMemo, useState } from "react";
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Card, PageHeader, SectionTitle, KpiTile } from "@/shared/components/ui";
 import { usd, pct } from "@/lib/format";
-
-interface Inputs {
-  investment: number;
-  engCostMonthly: number;
-  licensingMonthly: number;
-  infraMonthly: number;
-  peakBenefitMonthly: number;
-  rampMonths: number;
-}
+import { simulateRoi as simulate, type RoiInputs as Inputs } from "@/lib/scoring";
 
 const SCENARIOS: Record<string, Partial<Inputs> & { adoptionMult: number }> = {
   Base: { adoptionMult: 1 },
   Upside: { adoptionMult: 1.4 },
   Downside: { adoptionMult: 0.6 },
 };
-
-function simulate(inp: Inputs, adoptionMult: number) {
-  const months = 24;
-  const monthlyCost = inp.engCostMonthly + inp.licensingMonthly + inp.infraMonthly;
-  let cumulative = -inp.investment;
-  let payback: number | null = null;
-  const series: { month: number; benefit: number; cost: number; cumulative: number }[] = [];
-  let totalBenefit = 0;
-  for (let m = 1; m <= months; m++) {
-    const ramp = Math.min(1, m / inp.rampMonths);
-    const benefit = inp.peakBenefitMonthly * ramp * adoptionMult;
-    totalBenefit += benefit;
-    cumulative += benefit - monthlyCost;
-    if (payback === null && cumulative >= 0) payback = m;
-    series.push({ month: m, benefit: Math.round(benefit), cost: Math.round(monthlyCost), cumulative: Math.round(cumulative) });
-  }
-  const totalCost = inp.investment + monthlyCost * months;
-  const roi = Math.round(((totalBenefit - totalCost) / totalCost) * 100);
-  const npv = Math.round(series.reduce((acc, s, i) => acc + (s.benefit - s.cost) / Math.pow(1.008, i + 1), -inp.investment));
-  return { series, roi, payback, npv, netSavings: Math.round(totalBenefit - monthlyCost * months) };
-}
 
 export function RoiSimulator() {
   const [inp, setInp] = useState<Inputs>({

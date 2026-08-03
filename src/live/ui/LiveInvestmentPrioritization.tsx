@@ -3,9 +3,7 @@ import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Toolti
 import { useLiveStore } from "../store";
 import { Card, PageHeader, SectionTitle, EmptyState } from "@/shared/components/ui";
 import type { AssessmentRow } from "../persistence";
-
-type Framework = "RICE" | "WSJF" | "Value vs Effort" | "Opportunity";
-const FRAMEWORKS: Framework[] = ["RICE", "WSJF", "Value vs Effort", "Opportunity"];
+import { scoreOf, FRAMEWORKS, type Framework } from "@/lib/scoring";
 
 interface Candidate {
   id: string;
@@ -17,15 +15,6 @@ interface Candidate {
   jobSize: number;
   effort: number;
   opportunity: number;
-}
-
-function scoreOf(c: Candidate, fw: Framework): number {
-  switch (fw) {
-    case "RICE": return Math.round((c.reach * c.impact * c.confidence) / c.effort);
-    case "WSJF": return Math.round((c.value + c.jobSize * 8) / c.effort);
-    case "Value vs Effort": return Math.round((c.value / c.effort) * 10);
-    case "Opportunity": return c.opportunity;
-  }
 }
 
 export function LiveInvestmentPrioritization() {
