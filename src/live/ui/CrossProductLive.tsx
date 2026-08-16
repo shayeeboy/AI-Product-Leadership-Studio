@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLiveStore } from "../store";
 import { useLiveSnapshot, LiveBadge } from "./common";
 import { Card, PageHeader } from "@/shared/components/ui";
+import { ExportReportButton } from "./report/ExportReportButton";
 import { ADAPTER_LABELS, type Registration } from "../types";
 import type { LiveReadiness, LiveRagHealth, LiveFinancial } from "../liveAdapters";
 import { pct } from "@/lib/format";
@@ -29,9 +30,12 @@ export function CrossProductLive() {
         title="Cross-Product Live Scorecard"
         subtitle="Live status + a headline metric across every registered product, alongside your persisted opportunity scores and open risks. Segment by business unit."
         actions={
-          <select value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm">
-            {units.map((u) => <option key={u} value={u}>{u === "all" ? "All business units" : u}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <select value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm">
+              {units.map((u) => <option key={u} value={u}>{u === "all" ? "All business units" : u}</option>)}
+            </select>
+            <ExportReportButton />
+          </div>
         }
       />
       <Card className="overflow-hidden">

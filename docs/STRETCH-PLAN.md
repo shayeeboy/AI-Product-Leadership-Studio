@@ -25,7 +25,13 @@ Key files referenced below:
 
 ---
 
-## R7 — Board-ready export  *(do first — highest value/effort)*
+## R7 — Board-ready export  ✅ SHIPPED 2026-08-06
+
+> Delivered: a client-side **Export PDF** button on the Executive Dashboard + Cross-Product
+> scorecard downloads a board-ready report (cover, KPIs, exec summary, top opportunities, products
+> table) via jsPDF + html-to-image (lazy-loaded); rollup math extracted to unit-tested
+> `src/live/report/rollups.ts` so the PDF matches the screen. 11 Vitest + 1 Playwright download
+> test. PPTX deck deferred; a seeded-demo equivalent is a possible follow-on. Original scope below.
 
 **Objective.** One click on the Executive Dashboard and Cross-Product scorecard produces a
 **board-ready PDF** (primary) — cover page + KPIs + executive summary + top opportunities +
@@ -199,6 +205,7 @@ freshness number**; Studio RAG page → Refresh reflects it.
 
 ## Session kickoff checklist (next time)
 1. Pull all repos; confirm green gate (`npm test`, `build:all`, smoke).
-2. Start **R7**. Resolve its two decisions (format, mechanism), build, test, ship, move roadmap → Shipped.
-3. Then **R8** (audit sources first) — the RAG eval-pipeline follow-up above is already done (2026-08-16) — then **R6a** (auth) as the first R6 increment.
+2. **R7 is shipped (2026-08-06).** Start **R8** — audit each source's honest signal first (RAG full;
+   Diagnostic latency/uptime; FI freshness/lineage). The RAG eval-pipeline follow-up is already done.
+3. Then **R6a** (auth) as the first R6 increment.
 4. One `.git_prompts` session record per item shipped.

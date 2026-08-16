@@ -6,8 +6,9 @@ import { useLiveStore } from "../store";
 import { fetchLive } from "../liveAdapters";
 import { Card, PageHeader, SectionTitle, KpiTile } from "@/shared/components/ui";
 import { usd, pct } from "@/lib/format";
-import type { LiveResult } from "../types";
 import type { LiveRagHealth } from "../liveAdapters";
+import { computeRollups, computeTopOpps } from "../report/rollups";
+import { ExportReportButton } from "./report/ExportReportButton";
 
 const NR = "Not reported"; // shown instead of any seeded/fabricated number
 
@@ -30,57 +31,15 @@ export function LiveExecutiveDashboard() {
     })),
   });
 
-  const roll = useMemo(() => {
-    const okResults = snapshots.map((s) => s.data).filter((d): d is LiveResult<unknown> => !!d);
-    const reachable = okResults.filter((d) => d.ok).length;
-    const checking = snapshots.some((s) => s.isLoading);
-
-    // Live eval pass-rate across any product whose snapshot exposes eval metrics.
-    const allEval = okResults.flatMap((d) => (d.ok ? ((d.data as LiveRagHealth)?.evaluationMetrics ?? []) : []));
-    const evalPass = allEval.length ? Math.round((allEval.filter((m) => m.pass).length / allEval.length) * 100) : null;
-
-    // R14b/c — reliability (p95 latency) + live inference cost, from snapshots that expose them.
-    const p95s: number[] = [];
-    let liveCost = 0;
-    let costSeen = false;
-    for (const d of okResults) {
-      if (!d.ok) continue;
-      const rd = d.data as Partial<LiveRagHealth>;
-      if (typeof rd?.latencyMsP95 === "number") p95s.push(rd.latencyMsP95);
-      if (typeof rd?.costPerQuery === "number" && rd.observability && typeof rd.observability.total === "number") {
-        liveCost += rd.costPerQuery * rd.observability.total;
-        costSeen = true;
-      }
-    }
-    const avgP95 = p95s.length ? Math.round(p95s.reduce((a, b) => a + b, 0) / p95s.length) : null;
-
-    const spend = registrations.reduce((sum, r) => sum + Number(r.monthlySpend || 0), 0);
-    const roiTargets = registrations.map((r) => Number(r.roiTarget || 0)).filter((n) => n > 0);
-    const blendedRoi = roiTargets.length ? Math.round(roiTargets.reduce((a, b) => a + b, 0) / roiTargets.length) : null;
-
-    const openRisks = risks.filter((r) => (r.data as { status?: string }).status !== "closed").length;
-    const pendingReviews = reviews.filter((r) => (r.data as { status?: string }).status !== "completed").length;
-    const pendingStages = workflow.filter((w) => w.status === "in-progress" || w.status === "blocked").length;
-
-    // Products at risk: has an open risk, or a blocked/in-progress governance stage.
-    const atRiskIds = new Set<string>();
-    for (const r of risks) if (r.productId && (r.data as { status?: string }).status !== "closed") atRiskIds.add(r.productId);
-    for (const w of workflow) if (w.status === "blocked") atRiskIds.add(w.productId);
-
-    return {
-      reachable, checking, evalPass, spend, blendedRoi, openRisks,
-      pendingGovernance: pendingReviews + pendingStages,
-      atRisk: atRiskIds.size,
-      opportunities: assessments.length,
-      avgP95, liveCost: costSeen ? liveCost : null,
-    };
-  }, [snapshots, registrations, assessments, risks, reviews, workflow]);
-
-  const topOpps = useMemo(
-    () => [...assessments].filter((a) => a.opportunityScore != null).sort((a, b) => (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0)).slice(0, 6)
-      .map((a) => ({ name: a.title.length > 18 ? a.title.slice(0, 17) + "…" : a.title, score: a.opportunityScore ?? 0 })),
-    [assessments],
+  // Rollups + top opportunities are computed by the shared, unit-tested module
+  // (src/live/report/rollups.ts) so the board-report PDF (R7) shows the same
+  // numbers as this screen.
+  const roll = useMemo(
+    () => computeRollups({ registrations, assessments, risks, reviews, workflow, snapshots }),
+    [snapshots, registrations, assessments, risks, reviews, workflow],
   );
+
+  const topOpps = useMemo(() => computeTopOpps(assessments), [assessments]);
 
   const productRisks = (id: string) => risks.filter((r) => r.productId === id && (r.data as { status?: string }).status !== "closed").length;
 
@@ -89,6 +48,7 @@ export function LiveExecutiveDashboard() {
       <PageHeader
         title="Executive AI Decision Intelligence"
         subtitle="Portfolio-wide rollups computed live from the registry, live snapshots and your persisted governance/decision data. Anything without a real source shows “Not reported.”"
+        actions={<ExportReportButton />}
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
