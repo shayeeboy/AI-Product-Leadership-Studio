@@ -149,8 +149,51 @@ increment.
 
 ---
 
+## Follow-up (tech debt, not a Stretch item) — RAG eval pipeline
+
+> Surfaced 2026-08-15 while debugging a stale RAG dashboard. Small (~half a session), independent
+> of R6/7/8 — do it before or alongside **R8** (it's RAG-observability-adjacent). Lives in the
+> **Enterprise-RAG-Assistant** repo; the Studio just benefits, no Studio change needed.
+
+**Problem (three linked defects):**
+1. **`eval/summary.json` has no generator.** `server.js` `GET /snapshot` reads it live, but it's
+   *hand-maintained*. `npm run eval:judge` writes `eval/judge-results.json` (gitignored), a
+   different file — so every eval needs a manual sync. This drifted once already: the 2026-08-15
+   `eval:judge` run's numbers were put in the README but not this file, so `/snapshot` served
+   stale July numbers until a manual fix (commit `c105d5a`).
+2. **`knowledgeFreshnessDays` is a hardcoded constant (12)** — never reflects the real KB age, so
+   the Studio's Freshness tile is frozen regardless of evals/redeploys.
+3. **`refresh-eval.yml` (shipped in R9) is ineffective** — it runs `eval:judge` (writes the
+   gitignored file), commits `summary.json` which never changes, and doesn't redeploy Cloud Run,
+   so it never closes the loop. (Also: the live `/snapshot` only updates on a Cloud Run redeploy,
+   since the container reads the summary baked at deploy time.)
+
+**Fix:**
+1. Add `scripts/build-eval-summary.js` that reads `eval/judge-results.json` (+ keyword-eval /
+   citation-validity inputs) and emits `eval/summary.json` in the exact shape `server.js` reads:
+   `metrics[]`, `derived{retrievalQuality, citationAccuracy, hallucinationRate}`, `evalRunAt`,
+   `knowledgeFreshnessDays`. Mapping: `retrievalQuality ← semantic_hit5`,
+   `hallucinationRate ← hallucination_rate`, `evalRunAt ← judge timestamp date`; faithfulness /
+   correctness / refusal → `metrics[]`.
+2. Compute `knowledgeFreshnessDays` **honestly** — days since the KB's real max ingestion date
+   (a Neon query over the chunks/corpus table). If no reliable source, emit `null` → the Studio's
+   honest "Not reported", never a constant.
+3. Chain it: `eval:judge` (or a new `eval:summary`) runs the generator so `summary.json` is
+   always regenerated after an eval and committed in the same step.
+4. Fix `refresh-eval.yml` to run the generator + commit `summary.json`; automate the Cloud Run
+   redeploy if gcloud creds can live in CI, else document redeploy as the manual last step
+   (`gcloud run deploy rag-assistant --source . --region us-central1`).
+5. Correct the inaccurate `server.js` comment that says `summary.json` is "refreshed by
+   npm run eval:judge" (it isn't).
+
+**Verification:** run the generator locally → `summary.json` matches `judge-results.json` +
+computed freshness; commit; redeploy; live `/snapshot` shows fresh values **including a real
+freshness number**; Studio RAG page → Refresh reflects it.
+
+---
+
 ## Session kickoff checklist (next time)
 1. Pull all repos; confirm green gate (`npm test`, `build:all`, smoke).
 2. Start **R7**. Resolve its two decisions (format, mechanism), build, test, ship, move roadmap → Shipped.
-3. Then **R8** (audit sources first), then **R6a** (auth) as the first R6 increment.
+3. Then **R8** (audit sources first) — **fold in the RAG eval-pipeline follow-up above** while in that repo — then **R6a** (auth) as the first R6 increment.
 4. One `.git_prompts` session record per item shipped.
