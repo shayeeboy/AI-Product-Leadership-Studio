@@ -149,11 +149,16 @@ increment.
 
 ---
 
-## Follow-up (tech debt, not a Stretch item) — RAG eval pipeline
+## Follow-up (tech debt, not a Stretch item) — RAG eval pipeline  ✅ DONE 2026-08-16
 
-> Surfaced 2026-08-15 while debugging a stale RAG dashboard. Small (~half a session), independent
-> of R6/7/8 — do it before or alongside **R8** (it's RAG-observability-adjacent). Lives in the
-> **Enterprise-RAG-Assistant** repo; the Studio just benefits, no Studio change needed.
+> Surfaced 2026-08-15 while debugging a stale RAG dashboard; **fixed 2026-08-16** in the
+> Enterprise-RAG-Assistant repo (commit `148fab6`). `scripts/build-eval-summary.js` now generates
+> `eval/summary.json` from the eval intermediates and computes `knowledgeFreshnessDays` from the
+> newest `documents.created_at` in Neon (revealed the real value is **36d**, not the hardcoded 12);
+> `eval.js` persists Keyword Hit@5; `refresh-eval.yml` runs eval → eval:judge → eval:summary and
+> commits the result; the `server.js` comment is corrected. **Remaining manual step:** the live
+> `/snapshot` reflects it only after a Cloud Run redeploy
+> (`gcloud run deploy rag-assistant --source . --region us-central1`). Original scope kept below.
 
 **Problem (three linked defects):**
 1. **`eval/summary.json` has no generator.** `server.js` `GET /snapshot` reads it live, but it's
@@ -195,5 +200,5 @@ freshness number**; Studio RAG page → Refresh reflects it.
 ## Session kickoff checklist (next time)
 1. Pull all repos; confirm green gate (`npm test`, `build:all`, smoke).
 2. Start **R7**. Resolve its two decisions (format, mechanism), build, test, ship, move roadmap → Shipped.
-3. Then **R8** (audit sources first) — **fold in the RAG eval-pipeline follow-up above** while in that repo — then **R6a** (auth) as the first R6 increment.
+3. Then **R8** (audit sources first) — the RAG eval-pipeline follow-up above is already done (2026-08-16) — then **R6a** (auth) as the first R6 increment.
 4. One `.git_prompts` session record per item shipped.
