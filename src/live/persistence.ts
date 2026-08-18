@@ -68,11 +68,13 @@ function writeLocal(state: StudioState) {
   }
 }
 
-// Default registrations are always present; stored/registered ones merge on top
-// (a stored row with the same id overrides the default's editable fields).
-function mergeRegistrations(stored: Registration[]): Registration[] {
+// The 3 default registrations are injected ONLY in no-backend (localStorage)
+// mode — a single-user demo. With a backend (R6c), registrations come purely
+// from the org-scoped DB (seeded server-side per org), so orgs stay isolated and
+// don't all show the demo apps. A stored row overrides a default's fields.
+function mergeRegistrations(stored: Registration[], includeDefaults: boolean): Registration[] {
   const byId = new Map<string, Registration>();
-  for (const d of DEFAULT_REGISTRATIONS) byId.set(d.id, d);
+  if (includeDefaults) for (const d of DEFAULT_REGISTRATIONS) byId.set(d.id, d);
   for (const s of stored) byId.set(s.id, { ...byId.get(s.id), ...s });
   return [...byId.values()];
 }
@@ -131,7 +133,7 @@ export async function loadState(): Promise<StudioState> {
     try {
       const s = await api<Record<string, unknown>>("/api/state");
       return {
-        registrations: mergeRegistrations(arr(s.registrations).map((r) => camelizeRow<Registration>(r))),
+        registrations: mergeRegistrations(arr(s.registrations).map((r) => camelizeRow<Registration>(r)), false),
         assessments: arr(s.assessments).map((r) => camelizeRow<AssessmentRow>(r)),
         workflow: arr(s.workflow).map((r) => camelizeRow<WorkflowStageRow>(r)),
         audit: arr(s.audit).map((r) => camelizeRow<AuditRow>(r)),
@@ -142,7 +144,7 @@ export async function loadState(): Promise<StudioState> {
     }
   }
   const local = readLocal();
-  return { ...local, registrations: mergeRegistrations(local.registrations), entities: normalizeEntities(local.entities) };
+  return { ...local, registrations: mergeRegistrations(local.registrations, true), entities: normalizeEntities(local.entities) };
 }
 
 export async function registerProduct(reg: Registration): Promise<Registration> {

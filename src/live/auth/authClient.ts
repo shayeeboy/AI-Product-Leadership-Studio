@@ -59,3 +59,18 @@ export const inviteUser = (email: string, role: string) =>
   call<{ ok: true; user: ManagedUser }>("/api/users/invite", { method: "POST", headers: bearer(), body: JSON.stringify({ email, role }) });
 export const setUserDisabled = (id: string, disabled: boolean) =>
   call<{ ok: true; user: ManagedUser }>("/api/users/disabled", { method: "POST", headers: bearer(), body: JSON.stringify({ id, disabled }) });
+
+// R6c-c — super-admin org management.
+export interface Org {
+  id: string;
+  name: string;
+  slug: string | null;
+  suspended: boolean;
+  created_at?: string;
+  user_count?: number;
+  registration_count?: number;
+}
+export const listOrgs = () => call<{ orgs: Org[] }>("/api/orgs", { method: "GET", headers: bearer() });
+export const createOrg = (name: string) => call<{ ok: true; org: Org }>("/api/orgs", { method: "POST", headers: bearer(), body: JSON.stringify({ name }) });
+export const updateOrg = (id: string, patch: { name?: string; suspended?: boolean }) =>
+  call<{ ok: true; org: Org }>("/api/orgs/update", { method: "POST", headers: bearer(), body: JSON.stringify({ id, ...patch }) });

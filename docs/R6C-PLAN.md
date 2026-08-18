@@ -145,8 +145,15 @@ the **demo org's** data (seeded server-side), rather than global client constant
   seeded orgs and asserts org B can't see or delete org A's data (runs with `DATABASE_URL` +
   `AUTH_JWT_SECRET`; skips otherwise). **Inert with one org** (everyone is still `default`), so it
   deploys with no visible change but enforces isolation the instant a 2nd org exists.
-- **R6c-c — Org & super-admin management.** Super-admin org CRUD + "view as org"; org-admin invites
-  scoped to their org; the demo org for anonymous; new-org template seeding.
+- **R6c-c — Org & super-admin management. ✅ SHIPPED 2026-08-18 (code; needs migration + deploy).**
+  A super-admin-only **Organizations** console (`GET/POST /api/orgs`, `POST /api/orgs/update`):
+  list orgs + user/product counts, **create** (template-seeded with the 3 demo apps via `seedOrg`),
+  **rename**, and **suspend/enable** (suspending blocks members' sign-in + kills their sessions;
+  super-admin exempt; the `default`/demo org can't be suspended). Invite-into-org already scopes to
+  the admin's org (R6c-a). The client now injects the default registrations **only in no-backend
+  mode** — with a backend, each org's portfolio comes purely from its own DB (the migration seeds
+  `default`). `superAdminOnly` nav gating. **Deferred:** super-admin "view as org" (read-only browse
+  of another org) — a convenience; the create→invite-admin→manage flow works without it.
 - **R6c-d — (optional) Multi-org.** `memberships` + an org switcher in the top bar, if you chose #1b.
 
 ## 9. Risks & mitigations

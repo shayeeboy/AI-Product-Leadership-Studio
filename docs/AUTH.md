@@ -93,7 +93,21 @@ and rejects that user's existing sessions on their next request. (Break-glass: a
 > (they can still view everything). This is the intended governance gate. Make sure
 > `ADMIN_EMAILS` includes you first.
 
+## Multi-tenant (R6c)
+
+Every user belongs to an **org**; all Studio data (registrations, assessments,
+governance, entities) is scoped by `org_id`, enforced server-side — orgs can't
+see each other's data. `ADMIN_EMAILS` now grants **platform super-admin** (over
+all orgs) as well as org admin. Super-admins get an **Organizations** console to
+create (template-seeded), rename, and suspend orgs. New members join via an org
+admin's **Invite** (they inherit that org). Full plan: [`docs/R6C-PLAN.md`](R6C-PLAN.md).
+
+To activate R6c, re-run `server/schema.sql` (orgs + `org_id` columns + composite
+PKs + demo-org seed) and `npm run worker:deploy` — no visible change until a
+second org is created. Verify isolation with `npm run test:isolation`
+(needs `DATABASE_URL` + `AUTH_JWT_SECRET`).
+
 ## Scope
 
-**R6a** (identity) + **R6b** (roles/RBAC) are shipped. Still to come: **R6c** —
-per-org multi-tenant data isolation. See [`docs/STRETCH-PLAN.md`](STRETCH-PLAN.md).
+**R6a** (identity), **R6b** (roles/RBAC), and **R6c** (per-org multi-tenant) are
+all shipped.

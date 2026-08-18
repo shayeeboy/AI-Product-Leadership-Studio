@@ -181,3 +181,20 @@ ALTER TABLE workflow_stages DROP CONSTRAINT IF EXISTS workflow_stages_pkey;
 ALTER TABLE workflow_stages ADD  PRIMARY KEY (org_id, product_id, stage);
 ALTER TABLE studio_entities DROP CONSTRAINT IF EXISTS studio_entities_pkey;
 ALTER TABLE studio_entities ADD  PRIMARY KEY (org_id, entity, id);
+
+-- ---------------------------------------------------------------------------
+-- R6c-c — seed the 'default' org with the 3 template registrations so backend
+-- mode shows the portfolio from the DB. (The client now only injects defaults
+-- in no-backend/localStorage mode; new orgs are template-seeded by the Worker on
+-- creation.) Idempotent.
+-- ---------------------------------------------------------------------------
+INSERT INTO registrations (org_id, id, name, business_unit, sponsor, architecture, adapter_type, endpoint_url, status) VALUES
+  ('default','ai-native-diagnostic','AI-Native Team Diagnostic','People & Enablement','VP, Transformation','SaaS','readiness','https://ai-native-diagnostic.onrender.com/api/snapshot','healthy'),
+  ('default','enterprise-rag','Enterprise RAG Assistant','Knowledge & Support','Head of Support','RAG','rag-health','https://rag-assistant-694391756200.us-central1.run.app/snapshot','healthy'),
+  ('default','financial-intelligence','Financial Intelligence Strategy Agent','Strategy & Finance','CFO Office','Agentic','financial','https://shayeeboy.github.io/Financial-Intelligence-Strategy-Agent/studio-snapshot.json','healthy')
+ON CONFLICT (org_id, id) DO NOTHING;
+INSERT INTO workflow_stages (org_id, product_id, stage, status, reviewer) VALUES
+  ('default','ai-native-diagnostic','Registered','approved','System'),
+  ('default','enterprise-rag','Registered','approved','System'),
+  ('default','financial-intelligence','Registered','approved','System')
+ON CONFLICT (org_id, product_id, stage) DO NOTHING;

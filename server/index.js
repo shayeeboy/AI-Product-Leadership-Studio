@@ -18,6 +18,9 @@
 //   POST /api/users/role {id,role}                     → set a user's role (R6b; admin only)
 //   POST /api/users/invite {email,role?}               → pre-create a user + email a sign-in link (R6b; admin only)
 //   POST /api/users/disabled {id,disabled}             → disable/enable a user (R6b; admin only)
+//   GET  /api/orgs                                      → list orgs + counts (R6c; super-admin)
+//   POST /api/orgs {name}                              → create + template-seed an org (R6c; super-admin)
+//   POST /api/orgs/update {id,name?,suspended?}        → rename / suspend an org (R6c; super-admin)
 //   (R6b) POST /api/workflow now requires an approver/admin when auth is enabled
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
@@ -41,6 +44,15 @@ const WORKFLOW_STAGES = [
   "Human Approval",
   "Deployment Approval",
   "In Production",
+];
+
+// R6c-c — template registrations seeded into every new org (and 'default') so a
+// fresh org opens with the 3 portfolio apps rather than a blank slate. Mirrors
+// the client's DEFAULT_REGISTRATIONS (src/live/registry.ts).
+const TEMPLATE_REGISTRATIONS = [
+  { id: "ai-native-diagnostic", name: "AI-Native Team Diagnostic", businessUnit: "People & Enablement", sponsor: "VP, Transformation", architecture: "SaaS", adapterType: "readiness", endpointUrl: "https://ai-native-diagnostic.onrender.com/api/snapshot" },
+  { id: "enterprise-rag", name: "Enterprise RAG Assistant", businessUnit: "Knowledge & Support", sponsor: "Head of Support", architecture: "RAG", adapterType: "rag-health", endpointUrl: "https://rag-assistant-694391756200.us-central1.run.app/snapshot" },
+  { id: "financial-intelligence", name: "Financial Intelligence Strategy Agent", businessUnit: "Strategy & Finance", sponsor: "CFO Office", architecture: "Agentic", adapterType: "financial", endpointUrl: "https://shayeeboy.github.io/Financial-Intelligence-Strategy-Agent/studio-snapshot.json" },
 ];
 
 // Allowlisted Phase 3 (R10) Studio-managed entity kinds, stored in studio_entities.
@@ -85,6 +97,11 @@ export default {
       // R6b — admin-only user management (list users, set roles).
       if (p.startsWith("/api/users")) {
         return await handleUsers(p, request, env, sql, cors);
+      }
+
+      // R6c-c — super-admin org management (list / create / suspend / rename).
+      if (p.startsWith("/api/orgs")) {
+        return await handleOrgs(p, request, env, sql, cors);
       }
 
       // R6c-b — resolve the tenant scope ONCE from the verified session (never
@@ -374,6 +391,8 @@ async function handleAuth(p, request, env, sql, cors) {
       await sql`INSERT INTO users (id, email, name, role, super_admin, org_id, last_login_at) VALUES (${id}, ${email}, ${name}, ${role}, ${isAdmin}, 'default', now())`;
       user = { id, name, role, super_admin: isAdmin, org_id: "default" };
     }
+    const [o] = await sql`SELECT suspended FROM orgs WHERE id = ${user.org_id}`;
+    if (o?.suspended && !isAdmin) return json({ error: "This organization is suspended." }, 403, cors);
     const now = Math.floor(Date.now() / 1000);
     const jwt = await signJwt({ sub: user.id, email, name: user.name, role: user.role, org: user.org_id, sa: !!user.super_admin, iat: now, exp: now + 7 * 24 * 3600 }, secret);
     return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null, role: user.role, org: user.org_id, superAdmin: !!user.super_admin } }, 200, cors);
@@ -463,15 +482,77 @@ async function handleUsers(p, request, env, sql, cors) {
   return json({ error: "Not found" }, 404, cors);
 }
 
+// R6c-c — org management (super-admin only).
+async function handleOrgs(p, request, env, sql, cors) {
+  if (!env.AUTH_JWT_SECRET) return json({ error: "auth not configured" }, 501, cors);
+  const me = await authedUser(request, env, sql);
+  if (!me) return json({ error: "unauthorized" }, 401, cors);
+  if (!me.super_admin) return json({ error: "super-admin only" }, 403, cors);
+
+  if (p === "/api/orgs" && request.method === "GET") {
+    const orgs = await sql`
+      SELECT o.id, o.name, o.slug, o.suspended, o.created_at,
+             (SELECT count(*)::int FROM users u WHERE u.org_id = o.id) AS user_count,
+             (SELECT count(*)::int FROM registrations r WHERE r.org_id = o.id) AS registration_count
+      FROM orgs o ORDER BY o.created_at`;
+    return json({ orgs }, 200, cors);
+  }
+
+  if (p === "/api/orgs" && request.method === "POST") {
+    const b = await readJson(request);
+    const name = String(b.name || "").trim();
+    if (!name) return json({ error: "name is required" }, 400, cors);
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "org";
+    let id = base;
+    let n = 1;
+    while ((await sql`SELECT 1 FROM orgs WHERE id = ${id}`).length) id = `${base}-${++n}`;
+    const [org] = await sql`INSERT INTO orgs (id, name, slug) VALUES (${id}, ${name}, ${id}) RETURNING id, name, slug, suspended, created_at`;
+    await seedOrg(sql, id);
+    return json({ ok: true, org: { ...org, user_count: 0, registration_count: TEMPLATE_REGISTRATIONS.length } }, 201, cors);
+  }
+
+  if (p === "/api/orgs/update" && request.method === "POST") {
+    const b = await readJson(request);
+    const id = String(b.id || "");
+    if (!id) return json({ error: "id required" }, 400, cors);
+    if (id === "default" && b.suspended === true) return json({ error: "the default org can't be suspended" }, 400, cors);
+    if (typeof b.name === "string" && b.name.trim()) await sql`UPDATE orgs SET name = ${b.name.trim()} WHERE id = ${id}`;
+    if (typeof b.suspended === "boolean") await sql`UPDATE orgs SET suspended = ${b.suspended} WHERE id = ${id}`;
+    const [org] = await sql`SELECT id, name, slug, suspended, created_at FROM orgs WHERE id = ${id}`;
+    if (!org) return json({ error: "org not found" }, 404, cors);
+    return json({ ok: true, org }, 200, cors);
+  }
+
+  return json({ error: "Not found" }, 404, cors);
+}
+
+// Seed an org with the template registrations (+ their Registered stage). Idempotent.
+async function seedOrg(sql, orgId) {
+  for (const t of TEMPLATE_REGISTRATIONS) {
+    await sql`
+      INSERT INTO registrations (org_id, id, name, business_unit, sponsor, architecture, adapter_type, endpoint_url, status)
+      VALUES (${orgId}, ${t.id}, ${t.name}, ${t.businessUnit}, ${t.sponsor}, ${t.architecture}, ${t.adapterType}, ${t.endpointUrl}, 'healthy')
+      ON CONFLICT (org_id, id) DO NOTHING`;
+    await sql`
+      INSERT INTO workflow_stages (org_id, product_id, stage, status, reviewer)
+      VALUES (${orgId}, ${t.id}, 'Registered', 'approved', 'System')
+      ON CONFLICT (org_id, product_id, stage) DO NOTHING`;
+  }
+}
+
 // Verify the Bearer JWT and read the user's CURRENT role from Neon (authoritative
 // — role changes take effect immediately, not on next sign-in). null if unauthed.
 async function authedUser(request, env, sql) {
   if (!env.AUTH_JWT_SECRET) return null;
   const payload = await verifyBearer(request, env.AUTH_JWT_SECRET);
   if (!payload || !payload.sub) return null;
-  const rows = await sql`SELECT id, email, name, role, disabled, org_id, super_admin FROM users WHERE id = ${payload.sub}`;
+  const rows = await sql`
+    SELECT u.id, u.email, u.name, u.role, u.disabled, u.org_id, u.super_admin, o.suspended AS org_suspended
+    FROM users u LEFT JOIN orgs o ON o.id = u.org_id
+    WHERE u.id = ${payload.sub}`;
   const u = rows[0];
   if (!u || u.disabled) return null; // disabled → existing sessions stop working
+  if (u.org_suspended && !u.super_admin) return null; // suspended org → sessions die (super-admin exempt)
   return u;
 }
 

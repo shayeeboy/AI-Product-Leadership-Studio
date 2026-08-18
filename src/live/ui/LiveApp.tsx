@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity, Users,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity, Users, Building2,
 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { useAuthStore } from "../auth/authStore";
@@ -25,6 +25,7 @@ const RegisterProduct = lazyNamed(() => import("./RegisterProduct"), "RegisterPr
 const CrossProductLive = lazyNamed(() => import("./CrossProductLive"), "CrossProductLive");
 const LiveObservability = lazyNamed(() => import("./LiveObservability"), "LiveObservability");
 const LiveUsers = lazyNamed(() => import("./LiveUsers"), "LiveUsers");
+const LiveOrgs = lazyNamed(() => import("./LiveOrgs"), "LiveOrgs");
 const LiveGovernance = lazyNamed(() => import("./LiveGovernance"), "LiveGovernance");
 const LivePortfolioGovernance = lazyNamed(() => import("./LivePortfolioGovernance"), "LivePortfolioGovernance");
 const LiveResponsibleAiCenter = lazyNamed(() => import("./LiveResponsibleAiCenter"), "LiveResponsibleAiCenter");
@@ -64,6 +65,7 @@ const NAV_GROUPS = [
       { to: "/governance", label: "Human Approval Center", icon: Inbox, end: false },
       { to: "/evaluation", label: "Evaluation Dashboard", icon: Gauge, end: false },
       { to: "/users", label: "Users & Roles", icon: Users, end: false, adminOnly: true },
+      { to: "/orgs", label: "Organizations", icon: Building2, end: false, superAdminOnly: true },
     ],
   },
   {
@@ -84,6 +86,7 @@ export function LiveApp() {
   const setIdentity = useLiveStore((s) => s.setIdentity);
   const authUser = useAuthStore((s) => s.user);
   const isAdmin = canManageUsers(authUser?.role); // R6b — gate admin-only nav
+  const isSuperAdmin = !!authUser?.superAdmin; // R6c — gate super-admin-only nav
   const bootstrapAuth = useAuthStore((s) => s.bootstrap);
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -115,7 +118,12 @@ export function LiveApp() {
           {NAV_GROUPS.map((group) => (
             <div key={group.layer} className="mb-4">
               <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-ink-500">{group.layer}</div>
-              {group.items.filter((item) => !(item as { adminOnly?: boolean }).adminOnly || isAdmin).map((item) => (
+              {group.items.filter((item) => {
+                const it = item as { adminOnly?: boolean; superAdminOnly?: boolean };
+                if (it.superAdminOnly && !isSuperAdmin) return false;
+                if (it.adminOnly && !isAdmin) return false;
+                return true;
+              }).map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -180,6 +188,7 @@ export function LiveApp() {
                 <Route path="/cross" element={<CrossProductLive />} />
                 <Route path="/observability" element={<LiveObservability />} />
                 <Route path="/users" element={<LiveUsers />} />
+                <Route path="/orgs" element={<LiveOrgs />} />
                 <Route path="/governance" element={<LiveGovernance />} />
                 <Route path="/portfolio-governance" element={<LivePortfolioGovernance />} />
                 <Route path="/responsible-ai" element={<LiveResponsibleAiCenter />} />
