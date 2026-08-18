@@ -152,7 +152,8 @@ must be **server-side** in the Worker — never trust the client. Keep it $0.
   `GET /api/users` + `POST /api/users/role` behind a **Users & Roles** view; client affordances
   (disabled approve + "Approver required" hint). Pure `src/live/auth/roles.ts` (5 Vitest tests).
   Setup in [`docs/AUTH.md`](AUTH.md).
-- **R6c — Multi-tenant / per-org.** Add an `org_id` dimension to `studio_entities`,
+- **R6c — Multi-tenant / per-org.** Full plan + decisions in [`docs/R6C-PLAN.md`](R6C-PLAN.md).
+  Add an `org_id` dimension to `studio_entities`,
   `registrations`, `workflow_stages`, `audit_events`. Worker derives org from the session and
   **scopes every read/write**; data isolation enforced server-side. Registrations/entities become
   per-org. Requires a Neon migration + backfilling existing rows to a default org.
