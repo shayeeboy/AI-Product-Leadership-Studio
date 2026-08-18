@@ -102,24 +102,29 @@ the **demo org's** data (seeded server-side), rather than global client constant
   org does that user join? Options: land in the demo org as `viewer`; or disable self-signup so
   only **invites** (which carry the inviter's org) create members.
 
-## 7. Key decisions needed from you (these gate the build)
+## 7. Key decisions — ✅ ALL LOCKED (2026-08-18)
 
-1. **Membership model:** one-user-one-org (simplest) **[recommended to start]** vs multi-org
-   membership + an org switcher (`memberships` table). Single-org first; multi-org is the upgrade.
-2. **New-org onboarding:** start blank vs **template-seeded** with the 3 demo apps **[recommended
-   template]** so a new org isn't empty.
-3. **How users join an org:** invite-into-org (admin invites, user inherits that org) **[recommended]**
-   vs email-domain auto-join vs manual super-admin assignment.
-4. **Anonymous:** keep a public read-only **demo org [recommended]** vs require sign-in for everything.
-5. **Self-signup:** allowed → lands in demo org as viewer, vs **invite-only** membership [recommended
-   for a "real" tenant model].
+1. **Membership model: ✅ one-user-one-org** to start. A user belongs to exactly one org; role is
+   within it. (A `memberships` table + org switcher is the documented multi-org upgrade path,
+   deferred — that's what R6c-d would add if ever wanted.)
+2. **New-org onboarding: ✅ template-seeded** with the 3 demo apps, so a new org opens with a
+   working portfolio rather than a blank slate.
+3. **How users join an org: ✅ invite-into-org.** An org admin invites an email; the invitee
+   inherits that org + the chosen role. (No email-domain auto-join; no manual assignment as the
+   primary path.)
+4. **Anonymous: ✅ public read-only demo org.** Anonymous visitors see the seeded demo org
+   read-only — keeps the portfolio's "click to explore" intact.
+5. **Self-signup: ✅ invite-only for real-org membership.** A magic-link sign-in from a
+   non-invited address signs the user in as a **demo-org viewer** (read-only) — they can explore
+   signed-in but hold no real-org data until an admin invites them. (Reconciles #4 + #5.)
 6. **Super-admin surface: ✅ DECIDED — minimal.** Create/rename/suspend orgs; list all orgs (+ user
    / registration counts); audited read-only "view as org"; assign/replace an org's first admin. A
    fuller operator console (usage analytics, cross-org audit search, quotas/billing, org settings)
    is deferred — additive later, and unjustified for a demo without real tenants (same reasoning as
    R14d). Flip to a scoped console only if the goal becomes platform-depth showcase or real orgs.
-7. **Org identity transport:** org in the **session/JWT** (single app, static-Pages-friendly)
-   **[recommended]** — per-org subdomains aren't feasible on GitHub Pages.
+7. **Org identity transport: ✅ org in the session/JWT** (single app, static-Pages-friendly).
+   Per-org subdomains aren't feasible on GitHub Pages; the Worker derives org from the verified
+   JWT, never from a client-supplied value.
 
 ## 8. Phased delivery (each phase shippable)
 
