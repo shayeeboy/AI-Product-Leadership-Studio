@@ -13,6 +13,8 @@ export function LiveUsers() {
   const [users, setUsers] = useState<ManagedUser[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [pending, setPending] = useState<Record<string, string>>({}); // chosen-but-unsaved roles
+  const [savedId, setSavedId] = useState<string | null>(null); // transient "Saved ✓"
 
   useEffect(() => {
     let live = true;
@@ -26,13 +28,29 @@ export function LiveUsers() {
     };
   }, []);
 
-  async function changeRole(u: ManagedUser, role: string) {
+  const pick = (u: ManagedUser, role: string) => setPending((p) => ({ ...p, [u.id]: role }));
+  const cancel = (id: string) =>
+    setPending((p) => {
+      const n = { ...p };
+      delete n[id];
+      return n;
+    });
+
+  async function save(u: ManagedUser) {
+    const role = pending[u.id];
+    if (!role || role === u.role) return;
     setBusy(u.id);
     setError(null);
     const r = await setUserRole(u.id, role);
     setBusy(null);
-    if (r.ok) setUsers((prev) => prev?.map((x) => (x.id === u.id ? { ...x, role } : x)) ?? null);
-    else setError(r.error);
+    if (r.ok) {
+      setUsers((prev) => prev?.map((x) => (x.id === u.id ? { ...x, role } : x)) ?? null);
+      cancel(u.id);
+      setSavedId(u.id);
+      setTimeout(() => setSavedId((s) => (s === u.id ? null : s)), 2500);
+    } else {
+      setError(r.error);
+    }
   }
 
   if (!canManageUsers(me?.role)) {
@@ -80,19 +98,37 @@ export function LiveUsers() {
                         <div className="text-xs text-ink-400">{u.email}{self ? " · you" : ""}</div>
                       </td>
                       <td className="px-3 py-2.5">
-                        <select
-                          value={u.role}
-                          disabled={busy === u.id || self}
-                          onChange={(e) => changeRole(u, e.target.value)}
-                          title={self ? "You can't change your own role" : isRole(u.role) ? ROLE_HINT[u.role] : ""}
-                          className="rounded border border-ink-200 bg-white px-2 py-1 text-xs disabled:opacity-60"
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {ROLE_LABEL[r]}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={pending[u.id] ?? u.role}
+                            disabled={busy === u.id || self}
+                            onChange={(e) => pick(u, e.target.value)}
+                            title={self ? "You can't change your own role" : isRole(u.role) ? ROLE_HINT[u.role] : ""}
+                            className="rounded border border-ink-200 bg-white px-2 py-1 text-xs disabled:opacity-60"
+                          >
+                            {ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {ROLE_LABEL[r]}
+                              </option>
+                            ))}
+                          </select>
+                          {pending[u.id] && pending[u.id] !== u.role ? (
+                            <>
+                              <button
+                                onClick={() => save(u)}
+                                disabled={busy === u.id}
+                                className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+                              >
+                                {busy === u.id ? "Saving…" : "Save"}
+                              </button>
+                              <button onClick={() => cancel(u.id)} disabled={busy === u.id} className="rounded px-1.5 py-1 text-xs text-ink-500 hover:bg-ink-100">
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            savedId === u.id && <span className="text-xs font-medium text-emerald-600">Saved ✓</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 text-right text-ink-500">{u.last_login_at ? shortDate(u.last_login_at) : "—"}</td>
                     </tr>
