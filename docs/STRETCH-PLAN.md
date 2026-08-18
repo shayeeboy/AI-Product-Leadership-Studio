@@ -218,6 +218,6 @@ freshness number**; Studio RAG page → Refresh reflects it.
 1. Pull all repos; confirm green gate (`npm test`, `build:all`, smoke).
 2. **R7 (2026-08-06) and R8 (2026-08-17) are shipped.** Start **R6a** (auth) as the first R6
    increment — resolve R6's kickoff decisions (auth method, session transport, scope) first.
-3. Optional follow-ons if wanted: PPTX deck (R7), a seeded-demo export equivalent, and deepening
+3. Optional follow-ons if wanted: ~~PPTX deck (R7)~~ (shipped 2026-08-18), a seeded-demo export equivalent, and deepening
    the Diagnostic endpoint's observability block (R8, needs a Render redeploy).
 4. One `.git_prompts` session record per item shipped.

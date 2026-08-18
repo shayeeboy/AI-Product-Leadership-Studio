@@ -17,3 +17,14 @@ test("board report exports a PDF from the live executive dashboard", async ({ pa
   const [download] = await Promise.all([page.waitForEvent("download"), btn.click()]);
   expect(download.suggestedFilename()).toMatch(/^AI-Portfolio-Board-Report-\d{4}-\d{2}-\d{2}\.pdf$/);
 });
+
+test("board report exports a PPTX deck from the live executive dashboard", async ({ page, baseURL }) => {
+  const liveBase = (baseURL || "").replace(/seeded\/?$/, "");
+  await page.goto(`${liveBase}#/executive`, { waitUntil: "domcontentloaded" });
+
+  const btn = page.getByRole("button", { name: /export deck/i });
+  await expect(btn).toBeVisible({ timeout: 30_000 });
+
+  const [download] = await Promise.all([page.waitForEvent("download"), btn.click()]);
+  expect(download.suggestedFilename()).toMatch(/^AI-Portfolio-Board-Deck-\d{4}-\d{2}-\d{2}\.pptx$/);
+});
