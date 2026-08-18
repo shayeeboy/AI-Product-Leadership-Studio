@@ -13,4 +13,4 @@ ALLOWED_ORIGIN = "https://shayeeboy.github.io"
 # to enable magic-link sign-in (see docs/AUTH.md). MAIL_FROM must be a
 # Resend-verified sender. Leave unset to keep auth disabled (endpoints 501).
 APP_URL = "https://shayeeboy.github.io/AI-Product-Leadership-Studio"
-# MAIL_FROM = "Studio <noreply@your-verified-domain>"
+MAIL_FROM = "Shayzone Studio <noreply@shayzone.ca>"
