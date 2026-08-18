@@ -73,7 +73,14 @@ their own lazy chunk; green gate holds.
 
 ---
 
-## R8 — Real observability across all products  *(do second)*
+## R8 — Real observability across all products  ✅ SHIPPED 2026-08-17
+
+> Delivered: a new **Live Observability** view unifying reachability + measured endpoint latency
+> (universal), RAG's full runtime metrics, and **data freshness + lineage** for static sources
+> (FI provenance / last-updated), with honest "Not reported" gaps; plus a portfolio data-freshness
+> KPI on the Executive Dashboard. Derivation extracted to unit-tested
+> `src/live/report/observability.ts` (11 Vitest + a Playwright route test). Studio-side only, $0,
+> no source redeploys (Diagnostic-endpoint deepening deferred). Original scope below.
 
 **Objective.** Extend the live reliability/observability story (shipped in R14b/c for cost + p95)
 to a coherent **per-product observability strip** — honestly, capped by what each source exposes.
@@ -205,7 +212,8 @@ freshness number**; Studio RAG page → Refresh reflects it.
 
 ## Session kickoff checklist (next time)
 1. Pull all repos; confirm green gate (`npm test`, `build:all`, smoke).
-2. **R7 is shipped (2026-08-06).** Start **R8** — audit each source's honest signal first (RAG full;
-   Diagnostic latency/uptime; FI freshness/lineage). The RAG eval-pipeline follow-up is already done.
-3. Then **R6a** (auth) as the first R6 increment.
+2. **R7 (2026-08-06) and R8 (2026-08-17) are shipped.** Start **R6a** (auth) as the first R6
+   increment — resolve R6's kickoff decisions (auth method, session transport, scope) first.
+3. Optional follow-ons if wanted: PPTX deck (R7), a seeded-demo export equivalent, and deepening
+   the Diagnostic endpoint's observability block (R8, needs a Render redeploy).
 4. One `.git_prompts` session record per item shipped.

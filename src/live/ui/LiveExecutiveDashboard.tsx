@@ -8,6 +8,7 @@ import { Card, PageHeader, SectionTitle, KpiTile } from "@/shared/components/ui"
 import { usd, pct } from "@/lib/format";
 import type { LiveRagHealth } from "../liveAdapters";
 import { computeRollups, computeTopOpps } from "../report/rollups";
+import { deriveObservability, summarizeObservability } from "../report/observability";
 import { ExportReportButton } from "./report/ExportReportButton";
 
 const NR = "Not reported"; // shown instead of any seeded/fabricated number
@@ -41,6 +42,12 @@ export function LiveExecutiveDashboard() {
 
   const topOpps = useMemo(() => computeTopOpps(assessments), [assessments]);
 
+  // Portfolio data-freshness signal (R8): the stalest product's data age.
+  const dataFreshness = useMemo(
+    () => summarizeObservability(registrations.map((r, i) => deriveObservability(r, snapshots[i]))).oldestFreshnessDays,
+    [registrations, snapshots],
+  );
+
   const productRisks = (id: string) => risks.filter((r) => r.productId === id && (r.data as { status?: string }).status !== "closed").length;
 
   return (
@@ -63,6 +70,7 @@ export function LiveExecutiveDashboard() {
         <KpiTile label="Blended ROI target" value={roll.blendedRoi != null ? pct(roll.blendedRoi) : NR} footnote={roll.blendedRoi != null ? "avg of registrations" : "no target set"} />
         <KpiTile label="Live inference cost" value={roll.liveCost != null ? usd(roll.liveCost) : NR} footnote={roll.liveCost != null ? "cost/query × volume (R14c)" : "no source"} />
         <KpiTile label="Avg latency p95" value={roll.avgP95 != null ? `${(roll.avgP95 / 1000).toFixed(1)}s` : NR} footnote={roll.avgP95 != null ? "live reliability (R14b)" : "no source"} />
+        <KpiTile label="Data freshness" value={dataFreshness != null ? `${dataFreshness}d` : NR} footnote={dataFreshness != null ? "oldest source" : "no source"} intent={dataFreshness != null && dataFreshness > 30 ? "down" : "neutral"} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">

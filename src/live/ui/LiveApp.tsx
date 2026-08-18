@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity,
 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { LivePortfolio } from "./LivePortfolio"; // the "/" landing route — kept eager so first paint has no chunk wait
@@ -20,6 +20,7 @@ const LiveProductDiscovery = lazyNamed(() => import("./LiveProductDiscovery"), "
 const LiveProductDetail = lazyNamed(() => import("./LiveProductDetail"), "LiveProductDetail");
 const RegisterProduct = lazyNamed(() => import("./RegisterProduct"), "RegisterProduct");
 const CrossProductLive = lazyNamed(() => import("./CrossProductLive"), "CrossProductLive");
+const LiveObservability = lazyNamed(() => import("./LiveObservability"), "LiveObservability");
 const LiveGovernance = lazyNamed(() => import("./LiveGovernance"), "LiveGovernance");
 const LivePortfolioGovernance = lazyNamed(() => import("./LivePortfolioGovernance"), "LivePortfolioGovernance");
 const LiveResponsibleAiCenter = lazyNamed(() => import("./LiveResponsibleAiCenter"), "LiveResponsibleAiCenter");
@@ -37,6 +38,7 @@ const NAV_GROUPS = [
     items: [
       { to: "/executive", label: "Executive Dashboard", icon: LayoutDashboard, end: false },
       { to: "/cross", label: "Cross-Product Intelligence", icon: BarChart3, end: false },
+      { to: "/observability", label: "Live Observability", icon: Activity, end: false },
     ],
   },
   {
@@ -159,6 +161,7 @@ export function LiveApp() {
                 <Route path="/product/:id" element={<LiveProductDetail />} />
                 <Route path="/register" element={<RegisterProduct />} />
                 <Route path="/cross" element={<CrossProductLive />} />
+                <Route path="/observability" element={<LiveObservability />} />
                 <Route path="/governance" element={<LiveGovernance />} />
                 <Route path="/portfolio-governance" element={<LivePortfolioGovernance />} />
                 <Route path="/responsible-ai" element={<LiveResponsibleAiCenter />} />
