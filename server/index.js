@@ -298,8 +298,10 @@ async function handleAuth(p, request, env, sql, cors) {
     const link = `${env.APP_URL.replace(/\/$/, "")}/?token=${token}`;
     try {
       await sendMagicLink(env, email, link);
-    } catch {
-      return json({ error: "email send failed" }, 502, cors);
+    } catch (e) {
+      // Surface the upstream reason (Resend status + message) to help configure
+      // the sender/key; contains no secrets.
+      return json({ error: "email send failed", detail: String(e.message || e) }, 502, cors);
     }
     return json({ ok: true }, 200, cors); // never reveal whether the address exists
   }
@@ -422,5 +424,8 @@ async function sendMagicLink(env, email, link) {
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject: "Your sign-in link — AI Product & Leadership Studio", html }),
   });
-  if (!res.ok) throw new Error(`resend ${res.status}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`resend ${res.status}: ${detail.slice(0, 300)}`);
+  }
 }
