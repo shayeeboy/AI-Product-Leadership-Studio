@@ -14,3 +14,7 @@ ALLOWED_ORIGIN = "https://shayeeboy.github.io"
 # Resend-verified sender. Leave unset to keep auth disabled (endpoints 501).
 APP_URL = "https://shayeeboy.github.io/AI-Product-Leadership-Studio"
 MAIL_FROM = "Shayzone Studio <noreply@shayzone.ca>"
+# R6b — comma-separated emails auto-granted the 'admin' role on sign-in. Set this
+# to your own email before deploying R6b (else you sign in as 'contributor' and
+# can't approve). Admins then grant others 'approver' in Users & Roles.
+ADMIN_EMAILS = "shayeeboy@gmail.com"

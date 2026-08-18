@@ -146,10 +146,12 @@ must be **server-side** in the Worker — never trust the client. Keep it $0.
   `login_tokens` tables; SPA auth store + Sign-in dialog; optional/progressive (anonymous browsing
   preserved, endpoints 501 → silent fallback). The signed-in user drives the governance actor.
   Setup: [`docs/AUTH.md`](AUTH.md). 8 Vitest tests on the JWT helpers.
-- **R6b — Roles / RBAC.** Role model (`viewer | contributor | approver | admin`), stored per user
-  in Neon. **Gate governance actions server-side** (who may approve which stage) in the Worker's
-  workflow endpoint, plus client affordances (disable Approve when unauthorized). Audit records
-  the real actor + role.
+- **R6b — Roles / RBAC. ✅ SHIPPED 2026-08-18.** Role per user (`viewer < contributor < approver <
+  admin`, default contributor; admins via `ADMIN_EMAILS`). `POST /api/workflow` enforces
+  approver/admin server-side (401 anon / 403 wrong role) and audits the verified user; admin-only
+  `GET /api/users` + `POST /api/users/role` behind a **Users & Roles** view; client affordances
+  (disabled approve + "Approver required" hint). Pure `src/live/auth/roles.ts` (5 Vitest tests).
+  Setup in [`docs/AUTH.md`](AUTH.md).
 - **R6c — Multi-tenant / per-org.** Add an `org_id` dimension to `studio_entities`,
   `registrations`, `workflow_stages`, `audit_events`. Worker derives org from the session and
   **scopes every read/write**; data isolation enforced server-side. Registrations/entities become

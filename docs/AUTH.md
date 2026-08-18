@@ -63,8 +63,32 @@ curl -s -X POST https://ai-studio-persistence.shayzone.workers.dev/api/auth/requ
 | `POST /api/auth/verify {token}` | consume the link, upsert the user, return `{ token: <jwt>, user }` |
 | `GET  /api/auth/me` | validate the `Authorization: Bearer` JWT → `{ user }` |
 
+## Roles / RBAC (R6b)
+
+Every user has a role: **viewer < contributor < approver < admin** (new sign-ins
+default to **contributor**). Governance approvals — advancing a stage in
+`POST /api/workflow` — are **enforced server-side**: with auth enabled, only an
+**approver/admin** may advance a stage (anonymous → 401, wrong role → 403), and
+the audit records the *verified* user, not a client-supplied name. Admins manage
+roles in the Studio's **Users & Roles** view (`GET /api/users`, `POST /api/users/role`).
+
+**One-time R6b setup (on top of R6a):**
+
+1. **Re-run the migration** (adds the `role` column; additive, safe to re-run) —
+   Neon SQL editor, or `psql "$DATABASE_URL" -f server/schema.sql`.
+2. **Set `ADMIN_EMAILS`** in `wrangler.toml` to *your* email **before** deploying,
+   or you'll sign in as `contributor` and can't approve:
+   ```toml
+   ADMIN_EMAILS = "you@example.com"   # comma-separated for several admins
+   ```
+3. **Redeploy:** `npm run worker:deploy`.
+4. Sign in — you're now `admin`. Grant others `approver` in **Users & Roles**.
+
+> Heads-up: once R6b is deployed, **anonymous users can no longer advance stages**
+> (they can still view everything). This is the intended governance gate. Make sure
+> `ADMIN_EMAILS` includes you first.
+
 ## Scope
 
-This is **R6a** (identity). Still to come: **R6b** — roles/RBAC (server-enforced
-approval gating), and **R6c** — per-org multi-tenant data isolation. See
-[`docs/STRETCH-PLAN.md`](STRETCH-PLAN.md).
+**R6a** (identity) + **R6b** (roles/RBAC) are shipped. Still to come: **R6c** —
+per-org multi-tenant data isolation. See [`docs/STRETCH-PLAN.md`](STRETCH-PLAN.md).

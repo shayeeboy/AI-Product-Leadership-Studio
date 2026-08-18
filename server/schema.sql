@@ -104,3 +104,9 @@ CREATE TABLE IF NOT EXISTS login_tokens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS login_tokens_expiry ON login_tokens (expires_at);
+
+-- R6b (roles/RBAC) — a role per user. viewer < contributor < approver < admin.
+-- New users default to 'contributor'; admins are bootstrapped via the Worker's
+-- ADMIN_EMAILS var. Governance approvals require approver/admin (enforced in the
+-- Worker's /api/workflow route).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'contributor';

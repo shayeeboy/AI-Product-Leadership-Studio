@@ -26,3 +26,31 @@ export const verifyToken = (token: string) => call<{ token: string; user: AuthUs
 
 export const fetchMe = (jwt: string | null) =>
   call<{ user: AuthUser }>("/api/auth/me", { method: "GET", headers: jwt ? { Authorization: `Bearer ${jwt}` } : {} });
+
+// Shared session-token reader (also used by the persistence client so writes
+// carry the Bearer token for server-side role enforcement).
+export const AUTH_TOKEN_KEY = "studio.authToken";
+export function readAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+const bearer = (): Record<string, string> => {
+  const t = readAuthToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+// R6b — admin-only user management.
+export interface ManagedUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  last_login_at?: string | null;
+  created_at?: string;
+}
+export const listUsers = () => call<{ users: ManagedUser[] }>("/api/users", { method: "GET", headers: bearer() });
+export const setUserRole = (id: string, role: string) =>
+  call<{ ok: true; user: ManagedUser }>("/api/users/role", { method: "POST", headers: bearer(), body: JSON.stringify({ id, role }) });

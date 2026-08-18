@@ -6,12 +6,14 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
+  role?: string; // R6b — viewer | contributor | approver | admin
 }
 
 export interface JwtPayload {
   sub?: string;
   email?: string;
   name?: string | null;
+  role?: string;
   iat?: number;
   exp?: number;
 }
@@ -42,5 +44,5 @@ export function userFromToken(token: string | null): AuthUser | null {
   if (!token) return null;
   const p = decodeJwt(token);
   if (!p || isExpired(p) || !p.sub || !p.email) return null;
-  return { id: p.sub, email: p.email, name: p.name ?? null };
+  return { id: p.sub, email: p.email, name: p.name ?? null, role: p.role };
 }

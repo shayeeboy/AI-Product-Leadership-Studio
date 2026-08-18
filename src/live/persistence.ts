@@ -77,12 +77,31 @@ function mergeRegistrations(stored: Registration[]): Registration[] {
   return [...byId.values()];
 }
 
+// Attach the session Bearer token (R6b) so the Worker can enforce roles on
+// gated writes (e.g. governance approvals) and attribute the verified actor.
+function authHeader(): Record<string, string> {
+  try {
+    const t = localStorage.getItem("studio.authToken");
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    headers: { "Content-Type": "application/json", ...authHeader(), ...(init?.headers || {}) },
   });
-  if (!res.ok) throw new Error(`persistence ${path} → HTTP ${res.status}`);
+  if (!res.ok) {
+    let detail = "";
+    try {
+      detail = ((await res.json()) as { error?: string }).error || "";
+    } catch {
+      /* non-JSON */
+    }
+    throw new Error(detail || `persistence ${path} → HTTP ${res.status}`);
+  }
   return (await res.json()) as T;
 }
 

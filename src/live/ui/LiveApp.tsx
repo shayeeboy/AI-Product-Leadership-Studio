@@ -3,11 +3,12 @@ import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom"
 import { clsx } from "clsx";
 import {
   LayoutGrid, BarChart3, ShieldCheck, PlusCircle, Target, ListOrdered,
-  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity,
+  Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity, Users,
 } from "lucide-react";
 import { useLiveStore } from "../store";
 import { useAuthStore } from "../auth/authStore";
 import { AuthControls } from "../auth/AuthControls";
+import { canManageUsers } from "../auth/roles";
 import { LivePortfolio } from "./LivePortfolio"; // the "/" landing route — kept eager so first paint has no chunk wait
 
 // Every other route is code-split (R3): each becomes its own chunk, so the
@@ -23,6 +24,7 @@ const LiveProductDetail = lazyNamed(() => import("./LiveProductDetail"), "LivePr
 const RegisterProduct = lazyNamed(() => import("./RegisterProduct"), "RegisterProduct");
 const CrossProductLive = lazyNamed(() => import("./CrossProductLive"), "CrossProductLive");
 const LiveObservability = lazyNamed(() => import("./LiveObservability"), "LiveObservability");
+const LiveUsers = lazyNamed(() => import("./LiveUsers"), "LiveUsers");
 const LiveGovernance = lazyNamed(() => import("./LiveGovernance"), "LiveGovernance");
 const LivePortfolioGovernance = lazyNamed(() => import("./LivePortfolioGovernance"), "LivePortfolioGovernance");
 const LiveResponsibleAiCenter = lazyNamed(() => import("./LiveResponsibleAiCenter"), "LiveResponsibleAiCenter");
@@ -61,6 +63,7 @@ const NAV_GROUPS = [
       { to: "/responsible-ai", label: "Responsible AI Center", icon: ClipboardList, end: false },
       { to: "/governance", label: "Human Approval Center", icon: Inbox, end: false },
       { to: "/evaluation", label: "Evaluation Dashboard", icon: Gauge, end: false },
+      { to: "/users", label: "Users & Roles", icon: Users, end: false, adminOnly: true },
     ],
   },
   {
@@ -80,6 +83,7 @@ export function LiveApp() {
   const identity = useLiveStore((s) => s.identity);
   const setIdentity = useLiveStore((s) => s.setIdentity);
   const authUser = useAuthStore((s) => s.user);
+  const isAdmin = canManageUsers(authUser?.role); // R6b — gate admin-only nav
   const bootstrapAuth = useAuthStore((s) => s.bootstrap);
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -111,7 +115,7 @@ export function LiveApp() {
           {NAV_GROUPS.map((group) => (
             <div key={group.layer} className="mb-4">
               <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-ink-500">{group.layer}</div>
-              {group.items.map((item) => (
+              {group.items.filter((item) => !(item as { adminOnly?: boolean }).adminOnly || isAdmin).map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -175,6 +179,7 @@ export function LiveApp() {
                 <Route path="/register" element={<RegisterProduct />} />
                 <Route path="/cross" element={<CrossProductLive />} />
                 <Route path="/observability" element={<LiveObservability />} />
+                <Route path="/users" element={<LiveUsers />} />
                 <Route path="/governance" element={<LiveGovernance />} />
                 <Route path="/portfolio-governance" element={<LivePortfolioGovernance />} />
                 <Route path="/responsible-ai" element={<LiveResponsibleAiCenter />} />

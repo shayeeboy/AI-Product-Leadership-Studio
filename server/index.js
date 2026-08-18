@@ -13,7 +13,10 @@
 //   POST /api/assist {prompt}                          → optional LLM assist (R5); 501 if unconfigured
 //   POST /api/auth/request {email}                     → email a magic sign-in link (R6a); 501 if unconfigured
 //   POST /api/auth/verify {token}                      → consume the link → session JWT (R6a)
-//   GET  /api/auth/me                                  → validate Bearer JWT → { user } (R6a)
+//   GET  /api/auth/me                                  → validate Bearer JWT → { user + role } (R6a/b)
+//   GET  /api/users                                    → list users + roles (R6b; admin only)
+//   POST /api/users/role {id,role}                     → set a user's role (R6b; admin only)
+//   (R6b) POST /api/workflow now requires an approver/admin when auth is enabled
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
 //   DATABASE_URL     Neon connection string                 (secret)
@@ -25,6 +28,7 @@
 //   RESEND_API_KEY   optional Resend key for magic-link email  (secret)
 //   MAIL_FROM        verified sender address for sign-in email (var)
 //   APP_URL          Pages URL used to build the magic link    (var)
+//   ADMIN_EMAILS     comma-separated emails bootstrapped as admin (var, R6b)
 import { neon } from "@neondatabase/serverless";
 
 const WORKFLOW_STAGES = [
@@ -74,6 +78,11 @@ export default {
       // the device-local "Acting as" identity when auth isn't deployed yet.
       if (p.startsWith("/api/auth/")) {
         return await handleAuth(p, request, env, sql, cors);
+      }
+
+      // R6b — admin-only user management (list users, set roles).
+      if (p.startsWith("/api/users")) {
+        return await handleUsers(p, request, env, sql, cors);
       }
 
       if (p === "/api/state" && request.method === "GET") {
@@ -164,15 +173,29 @@ export default {
         if (!b.productId || !b.stage || !WORKFLOW_STAGES.includes(b.stage)) {
           return json({ error: "productId and a valid stage are required" }, 400, cors);
         }
+        // R6b — governance gate. When auth is enabled, advancing a stage requires
+        // a signed-in approver/admin, and the actor/reviewer is the VERIFIED user
+        // (never client-supplied). When auth is off, behavior is unchanged.
+        let actor = b.actor || b.reviewer || "Reviewer";
+        let reviewer = b.reviewer || null;
+        if (env.AUTH_JWT_SECRET) {
+          const me = await authedUser(request, env, sql);
+          if (!me) return json({ error: "sign in to record a governance decision" }, 401, cors);
+          if (me.role !== "approver" && me.role !== "admin") {
+            return json({ error: `your role (${me.role}) can't record approvals — an approver is required` }, 403, cors);
+          }
+          actor = me.name || me.email;
+          reviewer = me.name || me.email;
+        }
         const status = b.status || "in-progress";
         const [row] = await sql`
           INSERT INTO workflow_stages (product_id, stage, status, reviewer, comment, updated_at)
-          VALUES (${b.productId}, ${b.stage}, ${status}, ${b.reviewer || null}, ${b.comment || null}, now())
+          VALUES (${b.productId}, ${b.stage}, ${status}, ${reviewer}, ${b.comment || null}, now())
           ON CONFLICT (product_id, stage) DO UPDATE SET
             status = EXCLUDED.status, reviewer = EXCLUDED.reviewer, comment = EXCLUDED.comment, updated_at = now()
           RETURNING *`;
         await sql`INSERT INTO audit_events (product_id, actor, action, stage, note)
-          VALUES (${b.productId}, ${b.actor || b.reviewer || "Reviewer"}, ${statusVerb(status) + " " + b.stage}, ${b.stage}, ${b.comment || null})`;
+          VALUES (${b.productId}, ${actor}, ${statusVerb(status) + " " + b.stage}, ${b.stage}, ${b.comment || null})`;
         return json({ ok: true, stage: row }, 200, cors);
       }
 
@@ -278,9 +301,9 @@ async function handleAuth(p, request, env, sql, cors) {
 
   if (p === "/api/auth/me" && request.method === "GET") {
     if (!secret) return json({ error: "auth not configured" }, 501, cors);
-    const payload = await verifyBearer(request, secret);
-    if (!payload) return json({ error: "unauthorized" }, 401, cors);
-    return json({ user: { id: payload.sub, email: payload.email, name: payload.name ?? null } }, 200, cors);
+    const me = await authedUser(request, env, sql); // verifies JWT + reads the current role
+    if (!me) return json({ error: "unauthorized" }, 401, cors);
+    return json({ user: { id: me.id, email: me.email, name: me.name ?? null, role: me.role } }, 200, cors);
   }
 
   if (p === "/api/auth/request" && request.method === "POST") {
@@ -321,22 +344,73 @@ async function handleAuth(p, request, env, sql, cors) {
     await sql`UPDATE login_tokens SET used_at = now() WHERE token_hash = ${hash}`;
 
     const email = row.email;
-    const existing = await sql`SELECT id, name FROM users WHERE email = ${email}`;
+    const isAdmin = adminEmails(env).includes(email); // R6b — bootstrap admins by email
+    const existing = await sql`SELECT id, name, role FROM users WHERE email = ${email}`;
     let user = existing[0];
     if (user) {
-      await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
+      const role = isAdmin ? "admin" : user.role; // never demote below an admin allowlist
+      await sql`UPDATE users SET last_login_at = now(), role = ${role} WHERE id = ${user.id}`;
+      user = { ...user, role };
     } else {
       const id = crypto.randomUUID();
       const name = email.split("@")[0];
-      await sql`INSERT INTO users (id, email, name, last_login_at) VALUES (${id}, ${email}, ${name}, now())`;
-      user = { id, name };
+      const role = isAdmin ? "admin" : "contributor";
+      await sql`INSERT INTO users (id, email, name, role, last_login_at) VALUES (${id}, ${email}, ${name}, ${role}, now())`;
+      user = { id, name, role };
     }
     const now = Math.floor(Date.now() / 1000);
-    const jwt = await signJwt({ sub: user.id, email, name: user.name, iat: now, exp: now + 7 * 24 * 3600 }, secret);
-    return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null } }, 200, cors);
+    const jwt = await signJwt({ sub: user.id, email, name: user.name, role: user.role, iat: now, exp: now + 7 * 24 * 3600 }, secret);
+    return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null, role: user.role } }, 200, cors);
   }
 
   return json({ error: "Not found" }, 404, cors);
+}
+
+// R6b — admin-only user management.
+async function handleUsers(p, request, env, sql, cors) {
+  if (!env.AUTH_JWT_SECRET) return json({ error: "auth not configured" }, 501, cors);
+  const me = await authedUser(request, env, sql);
+  if (!me) return json({ error: "unauthorized" }, 401, cors);
+  if (me.role !== "admin") return json({ error: "admin only" }, 403, cors);
+
+  if (p === "/api/users" && request.method === "GET") {
+    const users = await sql`SELECT id, email, name, role, last_login_at, created_at FROM users ORDER BY created_at DESC`;
+    return json({ users }, 200, cors);
+  }
+
+  if (p === "/api/users/role" && request.method === "POST") {
+    const b = await readJson(request);
+    const id = String(b.id || "");
+    const role = String(b.role || "");
+    if (!id || !["viewer", "contributor", "approver", "admin"].includes(role)) {
+      return json({ error: "id and a valid role are required" }, 400, cors);
+    }
+    // Don't let an admin strip their own admin (avoid self-lockout).
+    if (id === me.id && role !== "admin") return json({ error: "you can't change your own admin role" }, 400, cors);
+    const [row] = await sql`UPDATE users SET role = ${role} WHERE id = ${id} RETURNING id, email, name, role`;
+    if (!row) return json({ error: "user not found" }, 404, cors);
+    return json({ ok: true, user: row }, 200, cors);
+  }
+
+  return json({ error: "Not found" }, 404, cors);
+}
+
+// Verify the Bearer JWT and read the user's CURRENT role from Neon (authoritative
+// — role changes take effect immediately, not on next sign-in). null if unauthed.
+async function authedUser(request, env, sql) {
+  if (!env.AUTH_JWT_SECRET) return null;
+  const payload = await verifyBearer(request, env.AUTH_JWT_SECRET);
+  if (!payload || !payload.sub) return null;
+  const rows = await sql`SELECT id, email, name, role FROM users WHERE id = ${payload.sub}`;
+  return rows[0] || null;
+}
+
+function adminEmails(env) {
+  return (env.ADMIN_EMAILS || "")
+    .toLowerCase()
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 async function readJson(request) {
