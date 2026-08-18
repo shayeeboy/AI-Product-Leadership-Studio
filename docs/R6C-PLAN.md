@@ -113,8 +113,11 @@ the **demo org's** data (seeded server-side), rather than global client constant
 4. **Anonymous:** keep a public read-only **demo org [recommended]** vs require sign-in for everything.
 5. **Self-signup:** allowed → lands in demo org as viewer, vs **invite-only** membership [recommended
    for a "real" tenant model].
-6. **Super-admin surface:** minimal (create/suspend orgs + support view) **[recommended]** vs a
-   fuller platform console.
+6. **Super-admin surface: ✅ DECIDED — minimal.** Create/rename/suspend orgs; list all orgs (+ user
+   / registration counts); audited read-only "view as org"; assign/replace an org's first admin. A
+   fuller operator console (usage analytics, cross-org audit search, quotas/billing, org settings)
+   is deferred — additive later, and unjustified for a demo without real tenants (same reasoning as
+   R14d). Flip to a scoped console only if the goal becomes platform-depth showcase or real orgs.
 7. **Org identity transport:** org in the **session/JWT** (single app, static-Pages-friendly)
    **[recommended]** — per-org subdomains aren't feasible on GitHub Pages.
 
