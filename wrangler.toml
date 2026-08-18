@@ -9,3 +9,8 @@ compatibility_flags = ["nodejs_compat"]
 # Non-secret vars — safe to commit. Set your real Pages origin before deploying.
 [vars]
 ALLOWED_ORIGIN = "https://shayeeboy.github.io"
+# R6a auth (optional). Set these + the AUTH_JWT_SECRET / RESEND_API_KEY secrets
+# to enable magic-link sign-in (see docs/AUTH.md). MAIL_FROM must be a
+# Resend-verified sender. Leave unset to keep auth disabled (endpoints 501).
+APP_URL = "https://shayeeboy.github.io/AI-Product-Leadership-Studio"
+# MAIL_FROM = "Studio <noreply@your-verified-domain>"

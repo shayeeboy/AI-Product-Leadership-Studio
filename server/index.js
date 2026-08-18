@@ -11,6 +11,9 @@
 //   POST /api/entity/:name {id?,productId?,data}       → upsert a Studio-managed entity (R10)
 //   DELETE /api/entity/:name/:id                       → delete a Studio-managed entity (R10)
 //   POST /api/assist {prompt}                          → optional LLM assist (R5); 501 if unconfigured
+//   POST /api/auth/request {email}                     → email a magic sign-in link (R6a); 501 if unconfigured
+//   POST /api/auth/verify {token}                      → consume the link → session JWT (R6a)
+//   GET  /api/auth/me                                  → validate Bearer JWT → { user } (R6a)
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
 //   DATABASE_URL     Neon connection string                 (secret)
@@ -18,6 +21,10 @@
 //   ASSIST_API_KEY   optional LLM key for /api/assist         (secret)
 //   ASSIST_BASE_URL  optional OpenAI-compatible base URL      (var, default Groq)
 //   ASSIST_MODEL     optional model id                        (var)
+//   AUTH_JWT_SECRET  optional HMAC secret enabling R6a auth    (secret)
+//   RESEND_API_KEY   optional Resend key for magic-link email  (secret)
+//   MAIL_FROM        verified sender address for sign-in email (var)
+//   APP_URL          Pages URL used to build the magic link    (var)
 import { neon } from "@neondatabase/serverless";
 
 const WORKFLOW_STAGES = [
@@ -60,6 +67,13 @@ export default {
           db = "connected";
         } catch {}
         return json({ ok: true, db }, 200, cors);
+      }
+
+      // R6a — passwordless magic-link auth. Self-contained; returns 501 until
+      // AUTH_JWT_SECRET (+ Resend vars) are configured, so the app degrades to
+      // the device-local "Acting as" identity when auth isn't deployed yet.
+      if (p.startsWith("/api/auth/")) {
+        return await handleAuth(p, request, env, sql, cors);
       }
 
       if (p === "/api/state" && request.method === "GET") {
@@ -244,10 +258,169 @@ function corsHeaders(request, env) {
   return {
     "Access-Control-Allow-Origin": ok ? origin : allow || "null",
     "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     Vary: "Origin",
   };
 }
 
 const json = (obj, status, cors) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...(cors || {}) } });
+
+// ---------------------------------------------------------------------------
+// R6a — passwordless magic-link auth. The Worker emails a one-time link, then
+// issues a short-TTL HMAC-signed session JWT (verified on GET /api/auth/me).
+// Everything is optional: without AUTH_JWT_SECRET (+ Resend vars) the endpoints
+// return 501 and the SPA stays on its device-local identity.
+// ---------------------------------------------------------------------------
+
+async function handleAuth(p, request, env, sql, cors) {
+  const secret = env.AUTH_JWT_SECRET;
+
+  if (p === "/api/auth/me" && request.method === "GET") {
+    if (!secret) return json({ error: "auth not configured" }, 501, cors);
+    const payload = await verifyBearer(request, secret);
+    if (!payload) return json({ error: "unauthorized" }, 401, cors);
+    return json({ user: { id: payload.sub, email: payload.email, name: payload.name ?? null } }, 200, cors);
+  }
+
+  if (p === "/api/auth/request" && request.method === "POST") {
+    if (!secret || !env.RESEND_API_KEY || !env.MAIL_FROM || !env.APP_URL) {
+      return json({ error: "auth not configured" }, 501, cors);
+    }
+    const body = await readJson(request);
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "valid email required" }, 400, cors);
+
+    const token = randomToken();
+    const hash = await sha256hex(token);
+    const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+    await sql`INSERT INTO login_tokens (token_hash, email, expires_at) VALUES (${hash}, ${email}, ${expires})`;
+    const link = `${env.APP_URL.replace(/\/$/, "")}/?token=${token}`;
+    try {
+      await sendMagicLink(env, email, link);
+    } catch {
+      return json({ error: "email send failed" }, 502, cors);
+    }
+    return json({ ok: true }, 200, cors); // never reveal whether the address exists
+  }
+
+  if (p === "/api/auth/verify" && request.method === "POST") {
+    if (!secret) return json({ error: "auth not configured" }, 501, cors);
+    const body = await readJson(request);
+    const token = String(body.token || "");
+    if (!token) return json({ error: "token required" }, 400, cors);
+
+    const hash = await sha256hex(token);
+    const rows = await sql`SELECT email, expires_at, used_at FROM login_tokens WHERE token_hash = ${hash}`;
+    const row = rows[0];
+    if (!row || row.used_at || new Date(row.expires_at).getTime() < Date.now()) {
+      return json({ error: "invalid or expired link" }, 400, cors);
+    }
+    await sql`UPDATE login_tokens SET used_at = now() WHERE token_hash = ${hash}`;
+
+    const email = row.email;
+    const existing = await sql`SELECT id, name FROM users WHERE email = ${email}`;
+    let user = existing[0];
+    if (user) {
+      await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
+    } else {
+      const id = crypto.randomUUID();
+      const name = email.split("@")[0];
+      await sql`INSERT INTO users (id, email, name, last_login_at) VALUES (${id}, ${email}, ${name}, now())`;
+      user = { id, name };
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const jwt = await signJwt({ sub: user.id, email, name: user.name, iat: now, exp: now + 7 * 24 * 3600 }, secret);
+    return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null } }, 200, cors);
+  }
+
+  return json({ error: "Not found" }, 404, cors);
+}
+
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return {};
+  }
+}
+
+function verifyBearer(request, secret) {
+  const m = (request.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/i);
+  return m ? verifyJwt(m[1], secret) : Promise.resolve(null);
+}
+
+function randomToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const TE = new TextEncoder();
+
+async function sha256hex(s) {
+  const buf = await crypto.subtle.digest("SHA-256", TE.encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function b64urlBytes(bytes) {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+const b64urlStr = (str) => b64urlBytes(TE.encode(str));
+function b64urlDecodeToString(str) {
+  const pad = str.length % 4 ? 4 - (str.length % 4) : 0;
+  return atob(str.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat(pad));
+}
+
+async function hmacSign(data, secret) {
+  const key = await crypto.subtle.importKey("raw", TE.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, TE.encode(data));
+  return b64urlBytes(new Uint8Array(sig));
+}
+
+async function signJwt(payload, secret) {
+  const header = b64urlStr(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = b64urlStr(JSON.stringify(payload));
+  const sig = await hmacSign(`${header}.${body}`, secret);
+  return `${header}.${body}.${sig}`;
+}
+
+async function verifyJwt(token, secret) {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [h, b, s] = parts;
+  const expected = await hmacSign(`${h}.${b}`, secret);
+  if (!timingSafeEqual(s, expected)) return null;
+  let payload;
+  try {
+    payload = JSON.parse(b64urlDecodeToString(b));
+  } catch {
+    return null;
+  }
+  if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+  return payload;
+}
+
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function sendMagicLink(env, email, link) {
+  const html = `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;color:#0f172a">
+    <h2 style="color:#1d3faf;margin:0 0 12px">Sign in to the AI Product &amp; Leadership Studio</h2>
+    <p style="line-height:1.6">Click below to sign in. This link expires in 15 minutes and can be used once.</p>
+    <p><a href="${link}" style="display:inline-block;background:#1d3faf;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600">Sign in →</a></p>
+    <p style="color:#64748b;font-size:12px;line-height:1.6">If you didn't request this, you can safely ignore this email.</p>
+  </div>`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject: "Your sign-in link — AI Product & Leadership Studio", html }),
+  });
+  if (!res.ok) throw new Error(`resend ${res.status}`);
+}

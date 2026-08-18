@@ -141,10 +141,11 @@ must be **server-side** in the Worker — never trust the client. Keep it $0.
    JWT + refresh, or cookie if the Worker shares the site origin.
 
 **Sub-milestones:**
-- **R6a — Identity/auth.** Worker endpoints: request-login, verify, `/me`, logout; issue a signed
-  session. Neon `users` table. SPA: a sign-in screen + auth context; **replace the "Acting as"
-  store identity** ([`src/live/store.ts`](../src/live/store.ts)) with the authenticated user, so
-  the governance **actor** is the signed-in person. Standalone-valuable.
+- **R6a — Identity/auth. ✅ SHIPPED 2026-08-17.** Magic-link (Resend) + short-TTL HMAC JWT on the
+  existing Worker + Neon; `POST /api/auth/request|verify`, `GET /api/auth/me`; `users` +
+  `login_tokens` tables; SPA auth store + Sign-in dialog; optional/progressive (anonymous browsing
+  preserved, endpoints 501 → silent fallback). The signed-in user drives the governance actor.
+  Setup: [`docs/AUTH.md`](AUTH.md). 8 Vitest tests on the JWT helpers.
 - **R6b — Roles / RBAC.** Role model (`viewer | contributor | approver | admin`), stored per user
   in Neon. **Gate governance actions server-side** (who may approve which stage) in the Worker's
   workflow endpoint, plus client affordances (disable Approve when unauthorized). Audit records

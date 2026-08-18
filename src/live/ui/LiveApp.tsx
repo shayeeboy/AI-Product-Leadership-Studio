@@ -6,6 +6,8 @@ import {
   Scale, DollarSign, TrendingUp, Radar, Menu, X, ClipboardList, Inbox, Gauge, LayoutDashboard, Lightbulb, Activity,
 } from "lucide-react";
 import { useLiveStore } from "../store";
+import { useAuthStore } from "../auth/authStore";
+import { AuthControls } from "../auth/AuthControls";
 import { LivePortfolio } from "./LivePortfolio"; // the "/" landing route — kept eager so first paint has no chunk wait
 
 // Every other route is code-split (R3): each becomes its own chunk, so the
@@ -77,12 +79,15 @@ export function LiveApp() {
   const backend = useLiveStore((s) => s.backend);
   const identity = useLiveStore((s) => s.identity);
   const setIdentity = useLiveStore((s) => s.setIdentity);
+  const authUser = useAuthStore((s) => s.user);
+  const bootstrapAuth = useAuthStore((s) => s.bootstrap);
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     init();
-  }, [init]);
+    bootstrapAuth(); // R6a — resolve ?token / stored session, drive the actor
+  }, [init, bootstrapAuth]);
 
   const seededUrl = `${import.meta.env.BASE_URL}seeded/`;
 
@@ -137,10 +142,18 @@ export function LiveApp() {
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="ml-auto flex items-center gap-3 text-xs">
-            <label className="hidden items-center gap-1.5 text-ink-500 sm:flex" title="Who governance actions are attributed to — local to this device until real sign-in (roadmap R6)">
-              <span className="font-medium">Acting as</span>
-              <input value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder="You" className="w-24 rounded border border-ink-200 px-2 py-0.5 text-xs outline-none focus:border-brand-500" />
-            </label>
+            {authUser ? (
+              <span className="hidden items-center gap-1.5 text-ink-500 sm:flex" title={`Governance actions attribute to your verified identity (${authUser.email})`}>
+                <span className="font-medium">Acting as</span>
+                <span className="font-semibold text-ink-800">{authUser.name || authUser.email}</span>
+              </span>
+            ) : (
+              <label className="hidden items-center gap-1.5 text-ink-500 sm:flex" title="Who governance actions are attributed to — local to this device until you sign in (roadmap R6)">
+                <span className="font-medium">Acting as</span>
+                <input value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder="You" className="w-24 rounded border border-ink-200 px-2 py-0.5 text-xs outline-none focus:border-brand-500" />
+              </label>
+            )}
+            <AuthControls />
             <span className={clsx("rounded-full px-2.5 py-0.5 font-medium", backend ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500")}>
               {backend ? "Shared persistence" : "Local persistence"}
             </span>

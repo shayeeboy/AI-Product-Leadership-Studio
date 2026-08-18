@@ -80,3 +80,27 @@ CREATE TABLE IF NOT EXISTS studio_entities (
 );
 CREATE INDEX IF NOT EXISTS studio_entities_lookup  ON studio_entities (entity, product_id);
 CREATE INDEX IF NOT EXISTS studio_entities_created ON studio_entities (created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- R6a (auth) — passwordless magic-link sign-in. Additive, safe to re-run.
+-- The Worker is the auth authority: it emails a one-time link, then issues a
+-- short-TTL Bearer JWT. Only a SHA-256 hash of each one-time token is stored.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS users (
+  id            TEXT PRIMARY KEY,               -- uuid
+  email         TEXT UNIQUE NOT NULL,
+  name          TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login_at TIMESTAMPTZ
+);
+
+-- One-time magic-link tokens (hashed). Rows are single-use and short-lived.
+CREATE TABLE IF NOT EXISTS login_tokens (
+  token_hash TEXT PRIMARY KEY,                  -- sha-256(hex) of the emailed token
+  email      TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at    TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS login_tokens_expiry ON login_tokens (expires_at);
