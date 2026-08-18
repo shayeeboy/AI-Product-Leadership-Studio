@@ -128,8 +128,13 @@ the **demo org's** data (seeded server-side), rather than global client constant
 
 ## 8. Phased delivery (each phase shippable)
 
-- **R6c-a — Foundation.** `orgs` table + `org_id`/`super_admin` columns; backfill into a `default`
-  org; JWT carries `org_id`; verify/me/invite set org. No behavior change yet (single org).
+- **R6c-a — Foundation. ✅ SHIPPED 2026-08-18 (code; needs migration + Worker deploy).** `orgs`
+  table + a seeded `default` org; `org_id` on `users`/`registrations`/`assessments`/
+  `workflow_stages`/`audit_events`/`studio_entities` + `super_admin` on users; backfill all existing
+  rows into `default`; JWT now carries `org` + `sa` (super-admin) claims; verify/me/invite set org;
+  `ADMIN_EMAILS` now = platform **super-admin** (+ org admin). Additive, **no behavior change** —
+  everything still runs as the one `default` org until R6c-b enforces isolation. Composite-PK
+  changes (workflow/entities) deferred to R6c-b. 79 Vitest incl. the org/super-admin JWT claim.
 - **R6c-b — Enforcement.** Route every Worker read/write through an org-scoped helper; stamp inserts;
   filter reads. **Isolation tests** (org A cannot read/write org B). This is the security core.
 - **R6c-c — Org & super-admin management.** Super-admin org CRUD + "view as org"; org-admin invites

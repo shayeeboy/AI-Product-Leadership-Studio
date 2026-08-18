@@ -48,4 +48,9 @@ describe("userFromToken", () => {
   it("returns null for no token", () => {
     expect(userFromToken(null)).toBeNull();
   });
+
+  it("carries the R6c org + super-admin claims", () => {
+    const u = userFromToken(tokenWith({ sub: "u1", email: "a@b.com", org: "acme", sa: true, exp: future }));
+    expect(u).toMatchObject({ id: "u1", org: "acme", superAdmin: true });
+  });
 });

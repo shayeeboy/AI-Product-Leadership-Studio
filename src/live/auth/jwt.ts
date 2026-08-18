@@ -7,6 +7,8 @@ export interface AuthUser {
   email: string;
   name: string | null;
   role?: string; // R6b — viewer | contributor | approver | admin
+  org?: string; // R6c — the org the user belongs to
+  superAdmin?: boolean; // R6c — platform super-admin
 }
 
 export interface JwtPayload {
@@ -14,6 +16,8 @@ export interface JwtPayload {
   email?: string;
   name?: string | null;
   role?: string;
+  org?: string; // R6c
+  sa?: boolean; // R6c — super-admin (short claim)
   iat?: number;
   exp?: number;
 }
@@ -44,5 +48,5 @@ export function userFromToken(token: string | null): AuthUser | null {
   if (!token) return null;
   const p = decodeJwt(token);
   if (!p || isExpired(p) || !p.sub || !p.email) return null;
-  return { id: p.sub, email: p.email, name: p.name ?? null, role: p.role };
+  return { id: p.sub, email: p.email, name: p.name ?? null, role: p.role, org: p.org, superAdmin: p.sa };
 }

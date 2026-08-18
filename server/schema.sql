@@ -114,3 +114,46 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'contribut
 -- Admin can disable a user: blocks sign-in and rejects existing sessions.
 -- Break-glass: an ADMIN_EMAILS email is re-enabled on its next sign-in.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;
+
+-- ---------------------------------------------------------------------------
+-- R6c-a (multi-tenant foundation) — org concept + backfill. ADDITIVE and safe
+-- to re-run; NO isolation is enforced yet (that's R6c-b). Everything continues
+-- to run as one 'default' org until then. See docs/R6C-PLAN.md.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS orgs (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  slug       TEXT UNIQUE,
+  suspended  BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO orgs (id, name, slug) VALUES ('default', 'Default Organization', 'default')
+  ON CONFLICT (id) DO NOTHING;
+
+-- Users belong to an org (role is within it) + a platform-level super-admin flag.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS org_id      TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS super_admin BOOLEAN NOT NULL DEFAULT false;
+
+-- Every tenant table gets an org_id (kept as plain TEXT, matching the existing
+-- id style). Composite-PK changes (workflow_stages, studio_entities) are deferred
+-- to R6c-b, before real multi-org — single 'default' org can't collide yet.
+ALTER TABLE registrations   ADD COLUMN IF NOT EXISTS org_id TEXT;
+ALTER TABLE assessments     ADD COLUMN IF NOT EXISTS org_id TEXT;
+ALTER TABLE workflow_stages ADD COLUMN IF NOT EXISTS org_id TEXT;
+ALTER TABLE audit_events    ADD COLUMN IF NOT EXISTS org_id TEXT;
+ALTER TABLE studio_entities ADD COLUMN IF NOT EXISTS org_id TEXT;
+
+-- Backfill everything that predates orgs into 'default'.
+UPDATE users            SET org_id = 'default' WHERE org_id IS NULL;
+UPDATE registrations    SET org_id = 'default' WHERE org_id IS NULL;
+UPDATE assessments      SET org_id = 'default' WHERE org_id IS NULL;
+UPDATE workflow_stages  SET org_id = 'default' WHERE org_id IS NULL;
+UPDATE audit_events     SET org_id = 'default' WHERE org_id IS NULL;
+UPDATE studio_entities  SET org_id = 'default' WHERE org_id IS NULL;
+
+CREATE INDEX IF NOT EXISTS registrations_org   ON registrations (org_id);
+CREATE INDEX IF NOT EXISTS assessments_org     ON assessments (org_id);
+CREATE INDEX IF NOT EXISTS workflow_org        ON workflow_stages (org_id);
+CREATE INDEX IF NOT EXISTS audit_org           ON audit_events (org_id);
+CREATE INDEX IF NOT EXISTS studio_entities_org ON studio_entities (org_id);

@@ -30,7 +30,7 @@
 //   RESEND_API_KEY   optional Resend key for magic-link email  (secret)
 //   MAIL_FROM        verified sender address for sign-in email (var)
 //   APP_URL          Pages URL used to build the magic link    (var)
-//   ADMIN_EMAILS     comma-separated emails bootstrapped as admin (var, R6b)
+//   ADMIN_EMAILS     comma-separated emails → platform super-admin + org admin (var, R6b/c)
 import { neon } from "@neondatabase/serverless";
 
 const WORKFLOW_STAGES = [
@@ -303,9 +303,9 @@ async function handleAuth(p, request, env, sql, cors) {
 
   if (p === "/api/auth/me" && request.method === "GET") {
     if (!secret) return json({ error: "auth not configured" }, 501, cors);
-    const me = await authedUser(request, env, sql); // verifies JWT + reads the current role
+    const me = await authedUser(request, env, sql); // verifies JWT + reads the current role/org
     if (!me) return json({ error: "unauthorized" }, 401, cors);
-    return json({ user: { id: me.id, email: me.email, name: me.name ?? null, role: me.role } }, 200, cors);
+    return json({ user: { id: me.id, email: me.email, name: me.name ?? null, role: me.role, org: me.org_id, superAdmin: !!me.super_admin } }, 200, cors);
   }
 
   if (p === "/api/auth/request" && request.method === "POST") {
@@ -346,27 +346,30 @@ async function handleAuth(p, request, env, sql, cors) {
     await sql`UPDATE login_tokens SET used_at = now() WHERE token_hash = ${hash}`;
 
     const email = row.email;
-    const isAdmin = adminEmails(env).includes(email); // R6b — bootstrap admins by email
-    const existing = await sql`SELECT id, name, role, disabled FROM users WHERE email = ${email}`;
+    const isAdmin = adminEmails(env).includes(email); // R6b/c — ADMIN_EMAILS = platform super-admins
+    const existing = await sql`SELECT id, name, role, disabled, org_id, super_admin FROM users WHERE email = ${email}`;
     let user = existing[0];
     if (user && user.disabled && !isAdmin) {
       return json({ error: "This account has been disabled." }, 403, cors);
     }
     if (user) {
       const role = isAdmin ? "admin" : user.role; // never demote below an admin allowlist
+      const superAdmin = isAdmin || user.super_admin;
+      const orgId = user.org_id || "default";
       // an allowlisted admin signing in re-enables themselves (break-glass)
-      await sql`UPDATE users SET last_login_at = now(), role = ${role}, disabled = ${isAdmin ? false : user.disabled} WHERE id = ${user.id}`;
-      user = { ...user, role };
+      await sql`UPDATE users SET last_login_at = now(), role = ${role}, disabled = ${isAdmin ? false : user.disabled}, super_admin = ${superAdmin}, org_id = ${orgId} WHERE id = ${user.id}`;
+      user = { ...user, role, super_admin: superAdmin, org_id: orgId };
     } else {
       const id = crypto.randomUUID();
       const name = email.split("@")[0];
       const role = isAdmin ? "admin" : "contributor";
-      await sql`INSERT INTO users (id, email, name, role, last_login_at) VALUES (${id}, ${email}, ${name}, ${role}, now())`;
-      user = { id, name, role };
+      // R6c-a: single 'default' org for now; the demo org + invite-scoped orgs land in R6c-c.
+      await sql`INSERT INTO users (id, email, name, role, super_admin, org_id, last_login_at) VALUES (${id}, ${email}, ${name}, ${role}, ${isAdmin}, 'default', now())`;
+      user = { id, name, role, super_admin: isAdmin, org_id: "default" };
     }
     const now = Math.floor(Date.now() / 1000);
-    const jwt = await signJwt({ sub: user.id, email, name: user.name, role: user.role, iat: now, exp: now + 7 * 24 * 3600 }, secret);
-    return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null, role: user.role } }, 200, cors);
+    const jwt = await signJwt({ sub: user.id, email, name: user.name, role: user.role, org: user.org_id, sa: !!user.super_admin, iat: now, exp: now + 7 * 24 * 3600 }, secret);
+    return json({ token: jwt, user: { id: user.id, email, name: user.name ?? null, role: user.role, org: user.org_id, superAdmin: !!user.super_admin } }, 200, cors);
   }
 
   return json({ error: "Not found" }, 404, cors);
@@ -402,7 +405,9 @@ async function handleUsers(p, request, env, sql, cors) {
     const role = ["viewer", "contributor", "approver", "admin"].includes(b.role) ? b.role : "contributor";
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "valid email required" }, 400, cors);
 
-    // Pre-create (or re-role) the user so they're listed immediately.
+    // Pre-create (or re-role) the user in the inviting admin's org so they're
+    // listed immediately (R6c-a: 'default' for now).
+    const orgId = me.org_id || "default";
     const existing = await sql`SELECT id, email, name, role FROM users WHERE email = ${email}`;
     let user = existing[0];
     if (user) {
@@ -411,7 +416,7 @@ async function handleUsers(p, request, env, sql, cors) {
     } else {
       const id = crypto.randomUUID();
       const name = email.split("@")[0];
-      await sql`INSERT INTO users (id, email, name, role) VALUES (${id}, ${email}, ${name}, ${role})`;
+      await sql`INSERT INTO users (id, email, name, role, org_id) VALUES (${id}, ${email}, ${name}, ${role}, ${orgId})`;
       user = { id, email, name, role };
     }
 
@@ -457,7 +462,7 @@ async function authedUser(request, env, sql) {
   if (!env.AUTH_JWT_SECRET) return null;
   const payload = await verifyBearer(request, env.AUTH_JWT_SECRET);
   if (!payload || !payload.sub) return null;
-  const rows = await sql`SELECT id, email, name, role, disabled FROM users WHERE id = ${payload.sub}`;
+  const rows = await sql`SELECT id, email, name, role, disabled, org_id, super_admin FROM users WHERE id = ${payload.sub}`;
   const u = rows[0];
   if (!u || u.disabled) return null; // disabled → existing sessions stop working
   return u;
