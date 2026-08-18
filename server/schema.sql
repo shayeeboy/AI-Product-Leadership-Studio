@@ -157,3 +157,27 @@ CREATE INDEX IF NOT EXISTS assessments_org     ON assessments (org_id);
 CREATE INDEX IF NOT EXISTS workflow_org        ON workflow_stages (org_id);
 CREATE INDEX IF NOT EXISTS audit_org           ON audit_events (org_id);
 CREATE INDEX IF NOT EXISTS studio_entities_org ON studio_entities (org_id);
+
+-- ---------------------------------------------------------------------------
+-- R6c-b (enforcement) — org_id is now REQUIRED and part of the composite keys,
+-- so different orgs can hold the same product/stage/entity id without colliding.
+-- The Worker scopes every read/write by the session's org. Safe to re-run; all
+-- existing rows are already 'default'.
+-- ---------------------------------------------------------------------------
+UPDATE users SET org_id = 'default' WHERE org_id IS NULL;
+ALTER TABLE users ALTER COLUMN org_id SET DEFAULT 'default';
+
+ALTER TABLE registrations   ALTER COLUMN org_id SET DEFAULT 'default', ALTER COLUMN org_id SET NOT NULL;
+ALTER TABLE assessments     ALTER COLUMN org_id SET DEFAULT 'default', ALTER COLUMN org_id SET NOT NULL;
+ALTER TABLE audit_events    ALTER COLUMN org_id SET DEFAULT 'default', ALTER COLUMN org_id SET NOT NULL;
+ALTER TABLE workflow_stages ALTER COLUMN org_id SET DEFAULT 'default', ALTER COLUMN org_id SET NOT NULL;
+ALTER TABLE studio_entities ALTER COLUMN org_id SET DEFAULT 'default', ALTER COLUMN org_id SET NOT NULL;
+
+-- Fold org_id into the primary keys (ids are otherwise shared across orgs:
+-- registration slugs, product/stage pairs, seeded entity ids).
+ALTER TABLE registrations   DROP CONSTRAINT IF EXISTS registrations_pkey;
+ALTER TABLE registrations   ADD  PRIMARY KEY (org_id, id);
+ALTER TABLE workflow_stages DROP CONSTRAINT IF EXISTS workflow_stages_pkey;
+ALTER TABLE workflow_stages ADD  PRIMARY KEY (org_id, product_id, stage);
+ALTER TABLE studio_entities DROP CONSTRAINT IF EXISTS studio_entities_pkey;
+ALTER TABLE studio_entities ADD  PRIMARY KEY (org_id, entity, id);

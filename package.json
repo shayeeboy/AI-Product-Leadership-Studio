@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:isolation": "node --test server/tenant-isolation.test.mjs",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy"
   },
@@ -48,6 +49,6 @@
     "typescript": "^5.5.3",
     "vite": "^5.3.4",
     "vitest": "^2.1.9",
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.124.0"
   }
 }

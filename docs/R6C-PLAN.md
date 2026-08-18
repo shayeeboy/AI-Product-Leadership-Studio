@@ -135,8 +135,16 @@ the **demo org's** data (seeded server-side), rather than global client constant
   `ADMIN_EMAILS` now = platform **super-admin** (+ org admin). Additive, **no behavior change** —
   everything still runs as the one `default` org until R6c-b enforces isolation. Composite-PK
   changes (workflow/entities) deferred to R6c-b. 79 Vitest incl. the org/super-admin JWT claim.
-- **R6c-b — Enforcement.** Route every Worker read/write through an org-scoped helper; stamp inserts;
-  filter reads. **Isolation tests** (org A cannot read/write org B). This is the security core.
+- **R6c-b — Enforcement. ✅ SHIPPED 2026-08-18 (code; needs migration + Worker deploy).** The
+  Worker resolves the tenant scope **once** from the verified session (authed → the user's org;
+  anonymous → `default`) and every tenant read filters by it / every write stamps it — `/api/state`,
+  registrations (POST/DELETE), assessments, workflow (+ audit), entities (POST/DELETE). `org_id` is
+  now `NOT NULL` and folded into the composite PKs (`registrations`, `workflow_stages`,
+  `studio_entities`) so orgs can't collide. A real **cross-org isolation test**
+  (`server/tenant-isolation.test.mjs`, `npm run test:isolation`) drives the Worker against two
+  seeded orgs and asserts org B can't see or delete org A's data (runs with `DATABASE_URL` +
+  `AUTH_JWT_SECRET`; skips otherwise). **Inert with one org** (everyone is still `default`), so it
+  deploys with no visible change but enforces isolation the instant a 2nd org exists.
 - **R6c-c — Org & super-admin management.** Super-admin org CRUD + "view as org"; org-admin invites
   scoped to their org; the demo org for anonymous; new-org template seeding.
 - **R6c-d — (optional) Multi-org.** `memberships` + an org switcher in the top bar, if you chose #1b.

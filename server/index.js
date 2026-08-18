@@ -87,13 +87,21 @@ export default {
         return await handleUsers(p, request, env, sql, cors);
       }
 
+      // R6c-b — resolve the tenant scope ONCE from the verified session (never
+      // client-supplied). Authenticated → the user's org; anonymous → 'default'
+      // (the shared/demo org). Every tenant read filters by it; every write
+      // stamps it. With one org this is inert; it enforces isolation once a
+      // second org exists.
+      const me = await authedUser(request, env, sql);
+      const org = me?.org_id || "default";
+
       if (p === "/api/state" && request.method === "GET") {
         const [registrations, assessments, workflow, audit, entityRows] = await Promise.all([
-          sql`SELECT * FROM registrations ORDER BY created_at DESC`,
-          sql`SELECT * FROM assessments ORDER BY created_at DESC`,
-          sql`SELECT * FROM workflow_stages`,
-          sql`SELECT * FROM audit_events ORDER BY created_at DESC LIMIT 200`,
-          sql`SELECT entity, id, product_id, data, created_at, updated_at FROM studio_entities ORDER BY created_at DESC`,
+          sql`SELECT * FROM registrations WHERE org_id = ${org} ORDER BY created_at DESC`,
+          sql`SELECT * FROM assessments WHERE org_id = ${org} ORDER BY created_at DESC`,
+          sql`SELECT * FROM workflow_stages WHERE org_id = ${org}`,
+          sql`SELECT * FROM audit_events WHERE org_id = ${org} ORDER BY created_at DESC LIMIT 200`,
+          sql`SELECT entity, id, product_id, data, created_at, updated_at FROM studio_entities WHERE org_id = ${org} ORDER BY created_at DESC`,
         ]);
         const entities = Object.fromEntries(ENTITY_TYPES.map((t) => [t, []]));
         for (const r of entityRows) (entities[r.entity] ||= []).push(r);
@@ -108,16 +116,16 @@ export default {
           const b = await request.json().catch(() => ({}));
           const id = b.id || crypto.randomUUID();
           const [row] = await sql`
-            INSERT INTO studio_entities (entity, id, product_id, data, updated_at)
-            VALUES (${name}, ${id}, ${b.productId || null}, ${JSON.stringify(b.data || {})}, now())
-            ON CONFLICT (entity, id) DO UPDATE SET
+            INSERT INTO studio_entities (org_id, entity, id, product_id, data, updated_at)
+            VALUES (${org}, ${name}, ${id}, ${b.productId || null}, ${JSON.stringify(b.data || {})}, now())
+            ON CONFLICT (org_id, entity, id) DO UPDATE SET
               product_id = EXCLUDED.product_id, data = EXCLUDED.data, updated_at = now()
             RETURNING *`;
           return json({ ok: true, entity: row }, 201, cors);
         }
         if (request.method === "DELETE") {
           const id = decodeURIComponent(parts[3] || "");
-          const del = await sql`DELETE FROM studio_entities WHERE entity = ${name} AND id = ${id} RETURNING id`;
+          const del = await sql`DELETE FROM studio_entities WHERE org_id = ${org} AND entity = ${name} AND id = ${id} RETURNING id`;
           return json({ ok: true, deleted: del[0]?.id ?? null }, 200, cors);
         }
       }
@@ -129,12 +137,12 @@ export default {
         const r = v.value;
         const [row] = await sql`
           INSERT INTO registrations
-            (id, name, business_unit, owner, sponsor, architecture, adapter_type, endpoint_url, status,
+            (org_id, id, name, business_unit, owner, sponsor, architecture, adapter_type, endpoint_url, status,
              lifecycle, annual_budget, monthly_spend, roi_target)
           VALUES
-            (${r.id}, ${r.name}, ${r.businessUnit}, ${r.owner}, ${r.sponsor}, ${r.architecture}, ${r.adapterType}, ${r.endpointUrl}, ${r.status},
+            (${org}, ${r.id}, ${r.name}, ${r.businessUnit}, ${r.owner}, ${r.sponsor}, ${r.architecture}, ${r.adapterType}, ${r.endpointUrl}, ${r.status},
              ${r.lifecycle}, ${r.annualBudget}, ${r.monthlySpend}, ${r.roiTarget})
-          ON CONFLICT (id) DO UPDATE SET
+          ON CONFLICT (org_id, id) DO UPDATE SET
             name = EXCLUDED.name, business_unit = EXCLUDED.business_unit, owner = EXCLUDED.owner,
             sponsor = EXCLUDED.sponsor, architecture = EXCLUDED.architecture,
             adapter_type = EXCLUDED.adapter_type, endpoint_url = EXCLUDED.endpoint_url,
@@ -142,18 +150,18 @@ export default {
             monthly_spend = EXCLUDED.monthly_spend, roi_target = EXCLUDED.roi_target
           RETURNING *`;
         await sql`
-          INSERT INTO workflow_stages (product_id, stage, status, reviewer)
-          VALUES (${r.id}, 'Registered', 'approved', ${r.owner || "Registrar"})
-          ON CONFLICT (product_id, stage) DO NOTHING`;
-        await sql`INSERT INTO audit_events (product_id, actor, action, stage, note)
-          VALUES (${r.id}, ${r.owner || "Registrar"}, ${"Registered " + r.name}, 'Registered', ${r.endpointUrl || null})`;
+          INSERT INTO workflow_stages (org_id, product_id, stage, status, reviewer)
+          VALUES (${org}, ${r.id}, 'Registered', 'approved', ${r.owner || "Registrar"})
+          ON CONFLICT (org_id, product_id, stage) DO NOTHING`;
+        await sql`INSERT INTO audit_events (org_id, product_id, actor, action, stage, note)
+          VALUES (${org}, ${r.id}, ${r.owner || "Registrar"}, ${"Registered " + r.name}, 'Registered', ${r.endpointUrl || null})`;
         return json({ ok: true, registration: row }, 201, cors);
       }
 
       if (p.startsWith("/api/registrations/") && request.method === "DELETE") {
         const id = decodeURIComponent(p.split("/").pop() || "");
-        await sql`DELETE FROM workflow_stages WHERE product_id = ${id}`;
-        const del = await sql`DELETE FROM registrations WHERE id = ${id} RETURNING id`;
+        await sql`DELETE FROM workflow_stages WHERE org_id = ${org} AND product_id = ${id}`;
+        const del = await sql`DELETE FROM registrations WHERE org_id = ${org} AND id = ${id} RETURNING id`;
         return json({ ok: true, deleted: del[0]?.id ?? null }, 200, cors);
       }
 
@@ -162,8 +170,8 @@ export default {
         if (!b.title) return json({ error: "title is required" }, 400, cors);
         const id = b.id || crypto.randomUUID();
         const [row] = await sql`
-          INSERT INTO assessments (id, product_id, title, scores, opportunity_score, strategic_fit, estimated_roi, confidence, recommendation)
-          VALUES (${id}, ${b.productId || null}, ${b.title}, ${JSON.stringify(b.scores || {})},
+          INSERT INTO assessments (org_id, id, product_id, title, scores, opportunity_score, strategic_fit, estimated_roi, confidence, recommendation)
+          VALUES (${org}, ${id}, ${b.productId || null}, ${b.title}, ${JSON.stringify(b.scores || {})},
                   ${b.opportunityScore ?? null}, ${b.strategicFit || null}, ${b.estimatedRoi ?? null},
                   ${b.confidence || null}, ${b.recommendation || null})
           RETURNING *`;
@@ -181,7 +189,6 @@ export default {
         let actor = b.actor || b.reviewer || "Reviewer";
         let reviewer = b.reviewer || null;
         if (env.AUTH_JWT_SECRET) {
-          const me = await authedUser(request, env, sql);
           if (!me) return json({ error: "sign in to record a governance decision" }, 401, cors);
           if (me.role !== "approver" && me.role !== "admin") {
             return json({ error: `your role (${me.role}) can't record approvals — an approver is required` }, 403, cors);
@@ -191,13 +198,13 @@ export default {
         }
         const status = b.status || "in-progress";
         const [row] = await sql`
-          INSERT INTO workflow_stages (product_id, stage, status, reviewer, comment, updated_at)
-          VALUES (${b.productId}, ${b.stage}, ${status}, ${reviewer}, ${b.comment || null}, now())
-          ON CONFLICT (product_id, stage) DO UPDATE SET
+          INSERT INTO workflow_stages (org_id, product_id, stage, status, reviewer, comment, updated_at)
+          VALUES (${org}, ${b.productId}, ${b.stage}, ${status}, ${reviewer}, ${b.comment || null}, now())
+          ON CONFLICT (org_id, product_id, stage) DO UPDATE SET
             status = EXCLUDED.status, reviewer = EXCLUDED.reviewer, comment = EXCLUDED.comment, updated_at = now()
           RETURNING *`;
-        await sql`INSERT INTO audit_events (product_id, actor, action, stage, note)
-          VALUES (${b.productId}, ${actor}, ${statusVerb(status) + " " + b.stage}, ${b.stage}, ${b.comment || null})`;
+        await sql`INSERT INTO audit_events (org_id, product_id, actor, action, stage, note)
+          VALUES (${org}, ${b.productId}, ${actor}, ${statusVerb(status) + " " + b.stage}, ${b.stage}, ${b.comment || null})`;
         return json({ ok: true, stage: row }, 200, cors);
       }
 
