@@ -70,7 +70,9 @@ default to **contributor**). Governance approvals — advancing a stage in
 `POST /api/workflow` — are **enforced server-side**: with auth enabled, only an
 **approver/admin** may advance a stage (anonymous → 401, wrong role → 403), and
 the audit records the *verified* user, not a client-supplied name. Admins manage
-roles in the Studio's **Users & Roles** view (`GET /api/users`, `POST /api/users/role`).
+roles in the Studio's **Users & Roles** view (`GET /api/users`, `POST /api/users/role`),
+and can **Invite** a teammate (`POST /api/users/invite {email, role?}`) — which
+pre-creates the user at the chosen role and emails them a 3-day sign-in link.
 
 **One-time R6b setup (on top of R6a):**
 

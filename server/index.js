@@ -16,6 +16,7 @@
 //   GET  /api/auth/me                                  → validate Bearer JWT → { user + role } (R6a/b)
 //   GET  /api/users                                    → list users + roles (R6b; admin only)
 //   POST /api/users/role {id,role}                     → set a user's role (R6b; admin only)
+//   POST /api/users/invite {email,role?}               → pre-create a user + email a sign-in link (R6b; admin only)
 //   (R6b) POST /api/workflow now requires an approver/admin when auth is enabled
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
@@ -378,6 +379,45 @@ async function handleUsers(p, request, env, sql, cors) {
     return json({ users }, 200, cors);
   }
 
+  if (p === "/api/users/invite" && request.method === "POST") {
+    if (!env.RESEND_API_KEY || !env.MAIL_FROM || !env.APP_URL) return json({ error: "email not configured" }, 501, cors);
+    const b = await readJson(request);
+    const email = String(b.email || "").trim().toLowerCase();
+    const role = ["viewer", "contributor", "approver", "admin"].includes(b.role) ? b.role : "contributor";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "valid email required" }, 400, cors);
+
+    // Pre-create (or re-role) the user so they're listed immediately.
+    const existing = await sql`SELECT id, email, name, role FROM users WHERE email = ${email}`;
+    let user = existing[0];
+    if (user) {
+      if (user.role !== role) await sql`UPDATE users SET role = ${role} WHERE id = ${user.id}`;
+      user = { ...user, role };
+    } else {
+      const id = crypto.randomUUID();
+      const name = email.split("@")[0];
+      await sql`INSERT INTO users (id, email, name, role) VALUES (${id}, ${email}, ${name}, ${role})`;
+      user = { id, email, name, role };
+    }
+
+    // Email a sign-in link (longer-lived than a normal login, since it's an invite).
+    const token = randomToken();
+    const hash = await sha256hex(token);
+    const expires = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(); // 3 days
+    await sql`INSERT INTO login_tokens (token_hash, email, expires_at) VALUES (${hash}, ${email}, ${expires})`;
+    const link = `${env.APP_URL.replace(/\/$/, "")}/?token=${token}`;
+    try {
+      await sendMagicLink(env, email, link, {
+        heading: "You've been invited to the AI Product & Leadership Studio",
+        subject: "You've been invited to the AI Product & Leadership Studio",
+        expiresLabel: "3 days",
+        cta: "Accept invite & sign in →",
+      });
+    } catch (e) {
+      return json({ error: "email send failed", detail: String(e.message || e) }, 502, cors);
+    }
+    return json({ ok: true, user: { id: user.id, email: user.email, name: user.name ?? null, role: user.role } }, 200, cors);
+  }
+
   if (p === "/api/users/role" && request.method === "POST") {
     const b = await readJson(request);
     const id = String(b.id || "");
@@ -486,17 +526,21 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-async function sendMagicLink(env, email, link) {
+async function sendMagicLink(env, email, link, opts = {}) {
+  const heading = opts.heading || "Sign in to the AI Product & Leadership Studio";
+  const expiresLabel = opts.expiresLabel || "15 minutes";
+  const subject = opts.subject || "Your sign-in link — AI Product & Leadership Studio";
+  const cta = opts.cta || "Sign in →";
   const html = `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;color:#0f172a">
-    <h2 style="color:#1d3faf;margin:0 0 12px">Sign in to the AI Product &amp; Leadership Studio</h2>
-    <p style="line-height:1.6">Click below to sign in. This link expires in 15 minutes and can be used once.</p>
-    <p><a href="${link}" style="display:inline-block;background:#1d3faf;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600">Sign in →</a></p>
-    <p style="color:#64748b;font-size:12px;line-height:1.6">If you didn't request this, you can safely ignore this email.</p>
+    <h2 style="color:#1d3faf;margin:0 0 12px">${heading}</h2>
+    <p style="line-height:1.6">Click below to sign in. This link expires in ${expiresLabel} and can be used once.</p>
+    <p><a href="${link}" style="display:inline-block;background:#1d3faf;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600">${cta}</a></p>
+    <p style="color:#64748b;font-size:12px;line-height:1.6">If you didn't expect this, you can safely ignore this email.</p>
   </div>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject: "Your sign-in link — AI Product & Leadership Studio", html }),
+    body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject, html }),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");

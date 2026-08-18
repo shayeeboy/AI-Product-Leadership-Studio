@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { UserPlus } from "lucide-react";
 import { useAuthStore } from "../auth/authStore";
-import { listUsers, setUserRole, type ManagedUser } from "../auth/authClient";
+import { listUsers, setUserRole, inviteUser, type ManagedUser } from "../auth/authClient";
 import { ROLES, ROLE_LABEL, ROLE_HINT, canManageUsers, isRole } from "../auth/roles";
 import { Card, PageHeader, SectionTitle, EmptyState } from "@/shared/components/ui";
 import { shortDate } from "@/lib/format";
@@ -15,6 +16,12 @@ export function LiveUsers() {
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<Record<string, string>>({}); // chosen-but-unsaved roles
   const [savedId, setSavedId] = useState<string | null>(null); // transient "Saved ✓"
+  // Invite flow
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("contributor");
+  const [inviting, setInviting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -35,6 +42,28 @@ export function LiveUsers() {
       delete n[id];
       return n;
     });
+
+  async function sendInvite() {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+    setInviting(true);
+    setError(null);
+    setNotice(null);
+    const r = await inviteUser(email, inviteRole);
+    setInviting(false);
+    if (r.ok) {
+      // Merge (or update) the pre-created user into the list.
+      setUsers((prev) => {
+        const rest = (prev ?? []).filter((x) => x.id !== r.data.user.id && x.email !== r.data.user.email);
+        return [r.data.user, ...rest];
+      });
+      setNotice(`Invite emailed to ${email} (as ${ROLE_LABEL[inviteRole as keyof typeof ROLE_LABEL] ?? inviteRole}). They'll appear here now and can sign in via the link.`);
+      setInviteEmail("");
+      setShowInvite(false);
+    } else {
+      setError(r.status === 501 ? "Email isn't configured on this deployment." : r.error);
+    }
+  }
 
   async function save(u: ManagedUser) {
     const role = pending[u.id];
@@ -69,11 +98,48 @@ export function LiveUsers() {
         subtitle="Roles gate what each signed-in user can do. Governance approvals require Approver or Admin; only Admins can manage users."
       />
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
+      {notice && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{notice}</div>}
 
       <Card className="overflow-hidden">
-        <div className="border-b border-ink-200 px-5 py-3">
-          <SectionTitle hint="live">Signed-in users</SectionTitle>
+        <div className="flex items-center justify-between border-b border-ink-200 px-5 py-3">
+          <SectionTitle hint="live">Users</SectionTitle>
+          <button
+            onClick={() => { setShowInvite((v) => !v); setError(null); setNotice(null); }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-50"
+          >
+            <UserPlus className="h-4 w-4" /> Invite user
+          </button>
         </div>
+
+        {showInvite && (
+          <form
+            onSubmit={(e) => { e.preventDefault(); sendInvite(); }}
+            className="flex flex-wrap items-end gap-3 border-b border-ink-200 bg-ink-50 px-5 py-4"
+          >
+            <label className="flex flex-col gap-1 text-xs text-ink-500">
+              Email
+              <input
+                type="email"
+                required
+                autoFocus
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="teammate@company.com"
+                className="w-64 rounded-lg border border-ink-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-ink-500">
+              Role
+              <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="rounded-lg border border-ink-200 bg-white px-2 py-1.5 text-sm">
+                {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+              </select>
+            </label>
+            <button type="submit" disabled={inviting} className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60">
+              {inviting ? "Sending…" : "Send invite"}
+            </button>
+            <button type="button" onClick={() => setShowInvite(false)} className="rounded-lg px-2 py-1.5 text-sm text-ink-500 hover:bg-ink-100">Cancel</button>
+          </form>
+        )}
         {users == null ? (
           <div className="p-8 text-center text-ink-400">Loading…</div>
         ) : users.length === 0 ? (
