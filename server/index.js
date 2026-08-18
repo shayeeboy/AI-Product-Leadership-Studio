@@ -17,6 +17,7 @@
 //   GET  /api/users                                    → list users + roles (R6b; admin only)
 //   POST /api/users/role {id,role}                     → set a user's role (R6b; admin only)
 //   POST /api/users/invite {email,role?}               → pre-create a user + email a sign-in link (R6b; admin only)
+//   POST /api/users/disabled {id,disabled}             → disable/enable a user (R6b; admin only)
 //   (R6b) POST /api/workflow now requires an approver/admin when auth is enabled
 //
 // Secrets/vars (wrangler.toml [vars] + `wrangler secret put`):
@@ -346,11 +347,15 @@ async function handleAuth(p, request, env, sql, cors) {
 
     const email = row.email;
     const isAdmin = adminEmails(env).includes(email); // R6b — bootstrap admins by email
-    const existing = await sql`SELECT id, name, role FROM users WHERE email = ${email}`;
+    const existing = await sql`SELECT id, name, role, disabled FROM users WHERE email = ${email}`;
     let user = existing[0];
+    if (user && user.disabled && !isAdmin) {
+      return json({ error: "This account has been disabled." }, 403, cors);
+    }
     if (user) {
       const role = isAdmin ? "admin" : user.role; // never demote below an admin allowlist
-      await sql`UPDATE users SET last_login_at = now(), role = ${role} WHERE id = ${user.id}`;
+      // an allowlisted admin signing in re-enables themselves (break-glass)
+      await sql`UPDATE users SET last_login_at = now(), role = ${role}, disabled = ${isAdmin ? false : user.disabled} WHERE id = ${user.id}`;
       user = { ...user, role };
     } else {
       const id = crypto.randomUUID();
@@ -375,8 +380,19 @@ async function handleUsers(p, request, env, sql, cors) {
   if (me.role !== "admin") return json({ error: "admin only" }, 403, cors);
 
   if (p === "/api/users" && request.method === "GET") {
-    const users = await sql`SELECT id, email, name, role, last_login_at, created_at FROM users ORDER BY created_at DESC`;
+    const users = await sql`SELECT id, email, name, role, disabled, last_login_at, created_at FROM users ORDER BY created_at DESC`;
     return json({ users }, 200, cors);
+  }
+
+  if (p === "/api/users/disabled" && request.method === "POST") {
+    const b = await readJson(request);
+    const id = String(b.id || "");
+    const disabled = !!b.disabled;
+    if (!id) return json({ error: "id required" }, 400, cors);
+    if (id === me.id) return json({ error: "you can't disable your own account" }, 400, cors);
+    const [row] = await sql`UPDATE users SET disabled = ${disabled} WHERE id = ${id} RETURNING id, email, name, role, disabled`;
+    if (!row) return json({ error: "user not found" }, 404, cors);
+    return json({ ok: true, user: row }, 200, cors);
   }
 
   if (p === "/api/users/invite" && request.method === "POST") {
@@ -441,8 +457,10 @@ async function authedUser(request, env, sql) {
   if (!env.AUTH_JWT_SECRET) return null;
   const payload = await verifyBearer(request, env.AUTH_JWT_SECRET);
   if (!payload || !payload.sub) return null;
-  const rows = await sql`SELECT id, email, name, role FROM users WHERE id = ${payload.sub}`;
-  return rows[0] || null;
+  const rows = await sql`SELECT id, email, name, role, disabled FROM users WHERE id = ${payload.sub}`;
+  const u = rows[0];
+  if (!u || u.disabled) return null; // disabled → existing sessions stop working
+  return u;
 }
 
 function adminEmails(env) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { UserPlus } from "lucide-react";
 import { useAuthStore } from "../auth/authStore";
-import { listUsers, setUserRole, inviteUser, type ManagedUser } from "../auth/authClient";
+import { listUsers, setUserRole, inviteUser, setUserDisabled, type ManagedUser } from "../auth/authClient";
 import { ROLES, ROLE_LABEL, ROLE_HINT, canManageUsers, isRole } from "../auth/roles";
 import { Card, PageHeader, SectionTitle, EmptyState } from "@/shared/components/ui";
 import { shortDate } from "@/lib/format";
@@ -63,6 +63,15 @@ export function LiveUsers() {
     } else {
       setError(r.status === 501 ? "Email isn't configured on this deployment." : r.error);
     }
+  }
+
+  async function toggleDisabled(u: ManagedUser) {
+    setBusy(u.id);
+    setError(null);
+    const r = await setUserDisabled(u.id, !u.disabled);
+    setBusy(null);
+    if (r.ok) setUsers((prev) => prev?.map((x) => (x.id === u.id ? { ...x, disabled: r.data.user.disabled } : x)) ?? null);
+    else setError(r.error);
   }
 
   async function save(u: ManagedUser) {
@@ -152,15 +161,19 @@ export function LiveUsers() {
                   <th className="px-5 py-2.5">User</th>
                   <th className="px-3 py-2.5">Role</th>
                   <th className="px-3 py-2.5 text-right">Last sign-in</th>
+                  <th className="px-3 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {users.map((u) => {
                   const self = u.id === me?.id;
                   return (
-                    <tr key={u.id} className="hover:bg-ink-50">
+                    <tr key={u.id} className={`hover:bg-ink-50 ${u.disabled ? "opacity-60" : ""}`}>
                       <td className="px-5 py-2.5">
-                        <div className="font-medium text-ink-800">{u.name || u.email}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-ink-800">{u.name || u.email}</span>
+                          {u.disabled && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600">Disabled</span>}
+                        </div>
                         <div className="text-xs text-ink-400">{u.email}{self ? " · you" : ""}</div>
                       </td>
                       <td className="px-3 py-2.5">
@@ -197,6 +210,23 @@ export function LiveUsers() {
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-right text-ink-500">{u.last_login_at ? shortDate(u.last_login_at) : "—"}</td>
+                      <td className="px-3 py-2.5 text-right">
+                        {self ? (
+                          <span className="text-xs text-ink-300">—</span>
+                        ) : (
+                          <button
+                            onClick={() => toggleDisabled(u)}
+                            disabled={busy === u.id}
+                            className={`rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60 ${
+                              u.disabled
+                                ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                : "border-red-200 text-red-600 hover:bg-red-50"
+                            }`}
+                          >
+                            {busy === u.id ? "…" : u.disabled ? "Enable" : "Disable"}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

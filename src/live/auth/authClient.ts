@@ -48,6 +48,7 @@ export interface ManagedUser {
   email: string;
   name: string | null;
   role: string;
+  disabled?: boolean;
   last_login_at?: string | null;
   created_at?: string;
 }
@@ -56,3 +57,5 @@ export const setUserRole = (id: string, role: string) =>
   call<{ ok: true; user: ManagedUser }>("/api/users/role", { method: "POST", headers: bearer(), body: JSON.stringify({ id, role }) });
 export const inviteUser = (email: string, role: string) =>
   call<{ ok: true; user: ManagedUser }>("/api/users/invite", { method: "POST", headers: bearer(), body: JSON.stringify({ email, role }) });
+export const setUserDisabled = (id: string, disabled: boolean) =>
+  call<{ ok: true; user: ManagedUser }>("/api/users/disabled", { method: "POST", headers: bearer(), body: JSON.stringify({ id, disabled }) });

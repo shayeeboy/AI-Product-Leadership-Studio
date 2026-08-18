@@ -110,3 +110,7 @@ CREATE INDEX IF NOT EXISTS login_tokens_expiry ON login_tokens (expires_at);
 -- ADMIN_EMAILS var. Governance approvals require approver/admin (enforced in the
 -- Worker's /api/workflow route).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'contributor';
+
+-- Admin can disable a user: blocks sign-in and rejects existing sessions.
+-- Break-glass: an ADMIN_EMAILS email is re-enabled on its next sign-in.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;

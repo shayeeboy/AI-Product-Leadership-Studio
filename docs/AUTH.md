@@ -72,7 +72,10 @@ default to **contributor**). Governance approvals — advancing a stage in
 the audit records the *verified* user, not a client-supplied name. Admins manage
 roles in the Studio's **Users & Roles** view (`GET /api/users`, `POST /api/users/role`),
 and can **Invite** a teammate (`POST /api/users/invite {email, role?}`) — which
-pre-creates the user at the chosen role and emails them a 3-day sign-in link.
+pre-creates the user at the chosen role and emails them a 3-day sign-in link — or
+**Disable** one (`POST /api/users/disabled {id, disabled}`), which blocks sign-in
+and rejects that user's existing sessions on their next request. (Break-glass: an
+`ADMIN_EMAILS` address is re-enabled on its next sign-in, so admins can't be locked out.)
 
 **One-time R6b setup (on top of R6a):**
 
