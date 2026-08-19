@@ -24,6 +24,22 @@ const writeToken = (t: string | null) => {
   }
 };
 
+// R6c "view as org" — a super-admin can browse another org's data read-only.
+// Persisted so it survives a reload; the persistence client sends it as X-Org.
+export interface ViewOrg {
+  id: string;
+  name: string;
+}
+const VIEW_KEY = "studio.viewOrg";
+const readViewOrg = (): ViewOrg | null => {
+  try {
+    const raw = localStorage.getItem(VIEW_KEY);
+    return raw ? (JSON.parse(raw) as ViewOrg) : null;
+  } catch {
+    return null;
+  }
+};
+
 // The governance "actor" is the live store's `identity`; drive it from the
 // signed-in user, and revert to the device default on sign-out.
 function applyIdentity(user: AuthUser | null) {
@@ -37,10 +53,12 @@ interface AuthState {
   configured: boolean; // auth backend deployed (endpoints not 501)
   phase: Phase;
   error: string | null;
+  viewAsOrg: ViewOrg | null; // R6c super-admin read-only view of another org
   bootstrap: () => Promise<void>;
   sendLink: (email: string) => Promise<void>;
   resetPhase: () => void;
   signOut: () => void;
+  setViewAsOrg: (org: ViewOrg | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -48,6 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   configured: authBackend,
   phase: "idle",
   error: null,
+  viewAsOrg: readViewOrg(),
 
   bootstrap: async () => {
     if (!authBackend) {
@@ -109,6 +128,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: () => {
     writeToken(null);
     applyIdentity(null);
-    set({ user: null, phase: "idle", error: null });
+    try {
+      localStorage.removeItem(VIEW_KEY);
+    } catch {
+      /* non-fatal */
+    }
+    set({ user: null, phase: "idle", error: null, viewAsOrg: null });
+    useLiveStore.getState().init(); // reload state back to own scope
+  },
+
+  // R6c — enter/exit read-only view of another org; re-fetch state for the new scope.
+  setViewAsOrg: (org) => {
+    try {
+      if (org) localStorage.setItem(VIEW_KEY, JSON.stringify(org));
+      else localStorage.removeItem(VIEW_KEY);
+    } catch {
+      /* non-fatal */
+    }
+    set({ viewAsOrg: org });
+    useLiveStore.getState().init();
   },
 }));

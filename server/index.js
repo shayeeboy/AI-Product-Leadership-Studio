@@ -110,7 +110,15 @@ export default {
       // stamps it. With one org this is inert; it enforces isolation once a
       // second org exists.
       const me = await authedUser(request, env, sql);
-      const org = me?.org_id || "default";
+      // R6c "view as org": a super-admin may pass X-Org to READ another org's
+      // data (read-only). Honored only for super-admins; writes are refused
+      // while viewing, so the override can never mutate another org.
+      const viewOrg = me?.super_admin ? request.headers.get("X-Org") : null;
+      const viewing = !!viewOrg && viewOrg !== me?.org_id;
+      if (viewing && request.method !== "GET") {
+        return json({ error: "read-only while viewing another org" }, 403, cors);
+      }
+      const org = viewing ? viewOrg : me?.org_id || "default";
 
       if (p === "/api/state" && request.method === "GET") {
         const [registrations, assessments, workflow, audit, entityRows] = await Promise.all([
@@ -307,7 +315,7 @@ function corsHeaders(request, env) {
   return {
     "Access-Control-Allow-Origin": ok ? origin : allow || "null",
     "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Org",
     Vary: "Origin",
   };
 }

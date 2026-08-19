@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Building2, Eye } from "lucide-react";
 import { useAuthStore } from "../auth/authStore";
 import { listOrgs, createOrg, updateOrg, type Org } from "../auth/authClient";
 import { Card, PageHeader, SectionTitle, EmptyState } from "@/shared/components/ui";
@@ -10,6 +11,8 @@ import { shortDate } from "@/lib/format";
 // isolation; this is the console.
 export function LiveOrgs() {
   const me = useAuthStore((s) => s.user);
+  const setViewAsOrg = useAuthStore((s) => s.setViewAsOrg);
+  const navigate = useNavigate();
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -130,6 +133,11 @@ export function LiveOrgs() {
                     <td className="px-3 py-2.5 text-right text-ink-500">{o.created_at ? shortDate(o.created_at) : "—"}</td>
                     <td className="px-3 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {o.id !== me?.org && (
+                          <button onClick={() => { setViewAsOrg({ id: o.id, name: o.name }); navigate("/executive"); }} title="Browse this org's portfolio read-only" className="inline-flex items-center gap-1 rounded-lg border border-brand-200 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50">
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </button>
+                        )}
                         <button onClick={() => { setEditId(o.id); setEditName(o.name); }} className="rounded-lg border border-ink-200 px-2.5 py-1 text-xs text-ink-600 hover:bg-ink-50">Rename</button>
                         {o.id !== "default" && (
                           <button

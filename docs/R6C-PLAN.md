@@ -152,8 +152,12 @@ the **demo org's** data (seeded server-side), rather than global client constant
   super-admin exempt; the `default`/demo org can't be suspended). Invite-into-org already scopes to
   the admin's org (R6c-a). The client now injects the default registrations **only in no-backend
   mode** — with a backend, each org's portfolio comes purely from its own DB (the migration seeds
-  `default`). `superAdminOnly` nav gating. **Deferred:** super-admin "view as org" (read-only browse
-  of another org) — a convenience; the create→invite-admin→manage flow works without it.
+  `default`). `superAdminOnly` nav gating.
+- **R6c "view as org" — ✅ SHIPPED 2026-08-18 (code; needs Worker deploy).** A super-admin can
+  **View** any org from the Organizations console to browse its portfolio **read-only**: the client
+  sends an `X-Org` header, honored **only for super-admins** on GET; writes carrying `X-Org` are
+  refused server-side (403), so the override can never mutate another org. A top-bar banner
+  ("Viewing <org> — read-only · Exit") makes the mode obvious; exiting re-fetches the own scope.
 - **R6c-d — (optional) Multi-org.** `memberships` + an org switcher in the top bar, if you chose #1b.
 
 ## 9. Risks & mitigations

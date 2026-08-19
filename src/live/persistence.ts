@@ -81,13 +81,22 @@ function mergeRegistrations(stored: Registration[], includeDefaults: boolean): R
 
 // Attach the session Bearer token (R6b) so the Worker can enforce roles on
 // gated writes (e.g. governance approvals) and attribute the verified actor.
+// Plus, if a super-admin is "viewing as" another org (R6c), send X-Org so reads
+// are scoped to it (the Worker honors it only for super-admins, read-only).
 function authHeader(): Record<string, string> {
+  const h: Record<string, string> = {};
   try {
     const t = localStorage.getItem("studio.authToken");
-    return t ? { Authorization: `Bearer ${t}` } : {};
+    if (t) h.Authorization = `Bearer ${t}`;
+    const view = localStorage.getItem("studio.viewOrg");
+    if (view) {
+      const v = JSON.parse(view) as { id?: string };
+      if (v?.id) h["X-Org"] = v.id;
+    }
   } catch {
-    return {};
+    /* non-fatal */
   }
+  return h;
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
