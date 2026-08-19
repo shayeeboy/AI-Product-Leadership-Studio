@@ -78,7 +78,7 @@ function ProductCard({ o }: { o: ProductObservability }) {
           <>
             <Metric label="Data sources" value={o.dataSources != null ? num(o.dataSources) : null} hint="live providers" />
             <Metric label="Indicators" value={o.indicatorCount != null ? num(o.indicatorCount) : null} hint="series tracked" />
-            <Metric label="Data current to" value={o.sourceDataAsOf ? shortDate(o.sourceDataAsOf) : null} hint={lagHint(o.sourceDataLagDays)} />
+            <Metric label="Oldest input" value={o.sourceDataAsOf ? shortDate(o.sourceDataAsOf) : null} hint={lagHint(o.sourceDataLagDays)} />
             <Metric label="History depth" value={o.historyPeriods != null ? `${o.historyPeriods}` : null} hint="periods / series" />
             <Metric label="Decision traces" value={o.decisionTraceCount != null ? num(o.decisionTraceCount) : null} hint="logged" />
           </>
