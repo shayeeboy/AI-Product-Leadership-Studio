@@ -30,6 +30,14 @@ export interface ProductObservability {
   activeSessions30d: number | null;
   completionRate: number | null; // %
   uptimeSeconds: number | null;
+  // Financial/agentic data signals (the Diagnostic's honest equivalents for a
+  // live-data strategy agent, R8b) — most derivable from the snapshot itself:
+  dataSources: number | null; // distinct upstream providers
+  indicatorCount: number | null; // series tracked
+  sourceDataAsOf: string | null; // freshest underlying data point (ISO)
+  sourceDataLagDays: number | null; // inherent reporting lag: runAt − sourceDataAsOf
+  historyPeriods: number | null; // history depth pulled per series (max)
+  decisionTraceCount: number | null; // agent decision steps logged
   // Data freshness + lineage (the honest observability dimension for static sources):
   freshnessDays: number | null;
   lastUpdated: string | null;
@@ -75,6 +83,12 @@ export function deriveObservability(
     activeSessions30d: null,
     completionRate: null,
     uptimeSeconds: null,
+    dataSources: null,
+    indicatorCount: null,
+    sourceDataAsOf: null,
+    sourceDataLagDays: null,
+    historyPeriods: null,
+    decisionTraceCount: null,
     freshnessDays: null,
     lastUpdated: null,
     lineage: null,
@@ -100,8 +114,23 @@ export function deriveObservability(
   }
   if (reg.adapterType === "financial") {
     const fin = res.data as LiveFinancial;
+    const obs = fin.observability;
+    const indicators = Array.isArray(fin.indicators) ? fin.indicators : [];
+    // Newest underlying data point (max ref_period) — the honest "data as of",
+    // distinct from when the brief ran. Derivable from indicators when the
+    // generator doesn't state it explicitly.
+    const refDates = indicators.map((i) => i.refPeriod).filter((d): d is string => !!d).sort();
+    const derivedAsOf = refDates.length ? refDates[refDates.length - 1] : null;
+    const sourceDataAsOf = obs?.sourceDataAsOf ?? derivedAsOf;
+    const lag = obs?.sourceDataLagDays ?? daysSince(sourceDataAsOf, new Date(fin.runAt ?? fin.lastUpdated).getTime());
     return {
       ...base,
+      dataSources: obs?.sourceCount ?? (indicators.length ? new Set(indicators.map((i) => i.source).filter(Boolean)).size : null),
+      indicatorCount: obs?.indicatorCount ?? (indicators.length || null),
+      sourceDataAsOf,
+      sourceDataLagDays: lag,
+      historyPeriods: obs?.historyPeriods ?? (indicators.length ? Math.max(...indicators.map((i) => i.nPeriods ?? i.trend?.length ?? 0)) || null : null),
+      decisionTraceCount: Array.isArray(fin.decisionTraces) ? fin.decisionTraces.length : null,
       freshnessDays: daysSince(fin.lastUpdated ?? fin.runAt, now),
       lastUpdated: fin.lastUpdated ?? fin.runAt ?? null,
       lineage: fin.provenance ?? null,
@@ -133,6 +162,7 @@ export interface ObservabilitySummary {
   avgEndpointLatencyMs: number | null;
   avgP95Ms: number | null;
   liveCost: number | null; // Σ cost/query × volume, where both are reported
+  avgFreshnessDays: number | null; // mean data age across products that report freshness (universal)
   oldestFreshnessDays: number | null; // the stalest product's data age
 }
 
@@ -158,6 +188,7 @@ export function summarizeObservability(items: ProductObservability[]): Observabi
     avgEndpointLatencyMs: avg(latencies),
     avgP95Ms: avg(p95s),
     liveCost: costSeen ? liveCost : null,
+    avgFreshnessDays: avg(freshness),
     oldestFreshnessDays: freshness.length ? Math.max(...freshness) : null,
   };
 }

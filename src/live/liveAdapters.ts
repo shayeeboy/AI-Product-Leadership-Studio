@@ -97,6 +97,10 @@ export interface LiveFinancialIndicator {
   sourceUrl: string;
   refPeriod: string | null;
   trend: { period: string; value: number }[];
+  // R8b — optional pass-through of the agent's real fetch metadata (present once
+  // the snapshot generator forwards them; absent → derived/omitted).
+  retrievedAt?: string | null; // when the agent last pulled this series
+  nPeriods?: number | null; // history depth pulled for this series
 }
 
 export interface LiveFinancial {
@@ -110,6 +114,17 @@ export interface LiveFinancial {
   strategicRecommendations: string[];
   decisionTraces: { step: string; rationale: string }[];
   briefUrl?: string;
+  // R8b — optional explicit observability block from the generator. Every value
+  // is derivable from the raw provenance snapshot; absent → the Studio derives
+  // what it can from indicators/decisionTraces. Never fabricated.
+  observability?: {
+    sourceCount?: number | null;
+    indicatorCount?: number | null;
+    dataRetrievedAt?: string | null; // newest retrieved_at across series
+    sourceDataAsOf?: string | null; // newest ref_period (freshest underlying data point)
+    sourceDataLagDays?: number | null; // runAt − sourceDataAsOf (inherent reporting lag)
+    historyPeriods?: number | null; // max n_periods across series
+  };
 }
 
 export interface LiveGenericHealth {

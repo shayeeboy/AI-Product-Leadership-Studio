@@ -19,6 +19,13 @@ function uptime(secs: number | null): string | null {
   return `${m}m`;
 }
 
+// Reporting lag as a human hint (e.g. ~7mo lag · 12d lag). null → undefined (no hint).
+function lagHint(days: number | null): string | undefined {
+  if (days == null) return undefined;
+  if (days >= 60) return `~${Math.round(days / 30)}mo lag`;
+  return `${days}d lag`;
+}
+
 function freshnessColor(days: number | null) {
   if (days == null) return "text-ink-400";
   if (days <= 7) return "text-emerald-600";
@@ -65,6 +72,16 @@ function ProductCard({ o }: { o: ProductObservability }) {
             <Metric label="Active · 30d" value={o.activeSessions30d != null ? num(o.activeSessions30d) : null} hint="sessions" />
             <Metric label="Uptime" value={uptime(o.uptimeSeconds)} hint="service" />
           </>
+        ) : o.adapterType === "financial" ? (
+          // A live-data strategy agent has no request telemetry — its honest
+          // signals are data coverage, source recency and decision provenance.
+          <>
+            <Metric label="Data sources" value={o.dataSources != null ? num(o.dataSources) : null} hint="live providers" />
+            <Metric label="Indicators" value={o.indicatorCount != null ? num(o.indicatorCount) : null} hint="series tracked" />
+            <Metric label="Data as of" value={o.sourceDataAsOf ? shortDate(o.sourceDataAsOf) : null} hint={lagHint(o.sourceDataLagDays)} />
+            <Metric label="History depth" value={o.historyPeriods != null ? `${o.historyPeriods}` : null} hint="periods / series" />
+            <Metric label="Decision traces" value={o.decisionTraceCount != null ? num(o.decisionTraceCount) : null} hint="logged" />
+          </>
         ) : (
           <>
             <Metric label="Latency p95" value={latency(o.p95Ms)} hint="reported" />
@@ -102,11 +119,14 @@ export function LiveObservability() {
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {/* The top row is portfolio-universal — reachability, endpoint latency and
+            data freshness are the three signals every product shares. Product-specific
+            metrics (RAG p95, inference cost) live on the per-product cards, not here. */}
         <KpiTile label="Sources reachable" value={`${summary.reachable} / ${summary.total}`} intent={summary.reachable === summary.total ? "up" : "neutral"} footnote={checking ? "checking…" : "live"} />
-        <KpiTile label="Avg endpoint latency" value={latency(summary.avgEndpointLatencyMs) ?? NR} footnote="fetch round-trip" />
-        <KpiTile label="Avg latency p95" value={latency(summary.avgP95Ms) ?? NR} footnote={summary.avgP95Ms != null ? "reported sources" : "no source"} />
-        <KpiTile label="Live inference cost" value={summary.liveCost != null ? usd(summary.liveCost) : NR} footnote={summary.liveCost != null ? "cost/query × volume" : "no source"} />
+        <KpiTile label="Avg endpoint latency" value={latency(summary.avgEndpointLatencyMs) ?? NR} footnote="fetch round-trip · all sources" />
+        <KpiTile label="Avg data freshness" value={summary.avgFreshnessDays != null ? `${summary.avgFreshnessDays}d` : NR} footnote="mean across products" intent={summary.avgFreshnessDays != null && summary.avgFreshnessDays > 30 ? "down" : "neutral"} />
         <KpiTile label="Oldest data" value={summary.oldestFreshnessDays != null ? `${summary.oldestFreshnessDays}d` : NR} footnote="stalest product" intent={summary.oldestFreshnessDays != null && summary.oldestFreshnessDays > 30 ? "down" : "neutral"} />
+        <KpiTile label="Live inference cost" value={summary.liveCost != null ? usd(summary.liveCost) : NR} footnote={summary.liveCost != null ? "Σ where metered" : "no source"} />
       </div>
 
       <div className="mt-6 space-y-4">

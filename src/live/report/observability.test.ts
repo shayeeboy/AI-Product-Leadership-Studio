@@ -41,18 +41,54 @@ describe("deriveObservability — rag-health", () => {
   });
 });
 
-describe("deriveObservability — financial (static source: freshness + lineage only)", () => {
-  it("reports freshness/lineage and leaves runtime metrics Not reported (null)", () => {
+describe("deriveObservability — financial (data agent: coverage + source recency)", () => {
+  const indicators = [
+    { key: "debt", label: "Debt", value: 179, unit: "%", source: "Statistics Canada — WDS", sourceUrl: "", refPeriod: "2026-01-01", trend: [{ period: "x", value: 1 }], nPeriods: 8 },
+    { key: "rent", label: "Rent", value: 2100, unit: "CAD", source: "CMHC (via StatCan)", sourceUrl: "", refPeriod: "2025-10-01", trend: [], nPeriods: 5 },
+    { key: "policy", label: "Policy rate", value: 2.5, unit: "%", source: "Bank of Canada — Valet", sourceUrl: "", refPeriod: "2026-01-15", trend: [], nPeriods: 12 },
+  ];
+
+  it("derives sources/indicators/data-as-of/history from the snapshot when no explicit block", () => {
     const o = deriveObservability(
       { id: "fi", name: "FI", adapterType: "financial" },
-      snap({ runAt: "2026-08-01T00:00:00Z", lastUpdated: "2026-08-10T00:00:00Z", provenance: "StatCan / CMHC / BoC" }),
+      snap({ runAt: "2026-08-16T00:00:00Z", lastUpdated: "2026-08-10T00:00:00Z", provenance: "StatCan / CMHC / BoC", indicators, decisionTraces: [{ step: "a", rationale: "b" }, { step: "c", rationale: "d" }] }),
       NOW,
     );
-    expect(o.freshnessDays).toBe(6); // since lastUpdated
+    expect(o.dataSources).toBe(3); // three distinct providers
+    expect(o.indicatorCount).toBe(3);
+    expect(o.sourceDataAsOf).toBe("2026-01-15"); // newest ref period
+    expect(o.sourceDataLagDays).toBe(213); // runAt(Aug 16) − asOf(Jan 15)
+    expect(o.historyPeriods).toBe(12); // max nPeriods
+    expect(o.decisionTraceCount).toBe(2);
+    expect(o.freshnessDays).toBe(6); // brief freshness since lastUpdated
     expect(o.lineage).toBe("StatCan / CMHC / BoC");
-    expect(o.p95Ms).toBeNull();
-    expect(o.costPerQuery).toBeNull();
+    expect(o.p95Ms).toBeNull(); // RAG-only metric stays null
     expect(o.endpointLatencyMs).toBe(200); // universal signal still present
+  });
+
+  it("prefers an explicit observability block when the generator provides one", () => {
+    const o = deriveObservability(
+      { id: "fi", name: "FI", adapterType: "financial" },
+      snap({ runAt: "2026-08-16T00:00:00Z", lastUpdated: "2026-08-16T00:00:00Z", provenance: "x", indicators, observability: { sourceCount: 3, indicatorCount: 8, sourceDataAsOf: "2026-02-01", sourceDataLagDays: 196, historyPeriods: 20 } }),
+      NOW,
+    );
+    expect(o.indicatorCount).toBe(8); // explicit wins over the 3 derivable
+    expect(o.sourceDataAsOf).toBe("2026-02-01");
+    expect(o.sourceDataLagDays).toBe(196);
+    expect(o.historyPeriods).toBe(20);
+  });
+});
+
+describe("summarizeObservability — universal rollups", () => {
+  it("averages data freshness across products that report it (not RAG-biased)", () => {
+    const items = [
+      deriveObservability({ id: "a", name: "A", adapterType: "rag-health" }, snap({ knowledgeFreshnessDays: 40, observability: { total: 1 } }), NOW),
+      deriveObservability({ id: "b", name: "B", adapterType: "readiness" }, snap({ lastUpdated: "2026-08-16T00:00:00Z", sessionCount: 5 }), NOW),
+      deriveObservability({ id: "c", name: "C", adapterType: "financial" }, snap({ runAt: "2026-08-16T00:00:00Z", lastUpdated: "2026-08-06T00:00:00Z", provenance: "p", indicators: [] }), NOW),
+    ];
+    const s = summarizeObservability(items);
+    expect(s.avgFreshnessDays).toBe(17); // mean of 40, 0, 10
+    expect(s.oldestFreshnessDays).toBe(40);
   });
 });
 
