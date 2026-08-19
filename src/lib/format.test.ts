@@ -37,4 +37,8 @@ describe("shortDate", () => {
     // Use a midday UTC time so the local-date rendering can't slip a day.
     expect(shortDate("2026-03-14T12:00:00Z")).toBe("Mar 14, 2026");
   });
+  it("preserves a date-only string's calendar day regardless of local zone", () => {
+    // A "2025-01-01" ref period must not slip to Dec 31, 2024 in a behind-UTC zone.
+    expect(shortDate("2025-01-01")).toBe("Jan 1, 2025");
+  });
 });
