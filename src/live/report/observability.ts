@@ -22,6 +22,14 @@ export interface ProductObservability {
   volume: number | null;
   groundedRate: number | null; // %
   errorRate: number | null; // %
+  // Readiness runtime signals (only the Diagnostic exposes these, R8) — the
+  // honest equivalents for an assessment tool that records no request telemetry:
+  readinessScore: number | null; // 0-100
+  sessionCount: number | null; // assessments recorded
+  activeSessions7d: number | null;
+  activeSessions30d: number | null;
+  completionRate: number | null; // %
+  uptimeSeconds: number | null;
   // Data freshness + lineage (the honest observability dimension for static sources):
   freshnessDays: number | null;
   lastUpdated: string | null;
@@ -61,6 +69,12 @@ export function deriveObservability(
     volume: null,
     groundedRate: null,
     errorRate: null,
+    readinessScore: null,
+    sessionCount: null,
+    activeSessions7d: null,
+    activeSessions30d: null,
+    completionRate: null,
+    uptimeSeconds: null,
     freshnessDays: null,
     lastUpdated: null,
     lineage: null,
@@ -95,9 +109,17 @@ export function deriveObservability(
   }
   if (reg.adapterType === "readiness") {
     const rd = res.data as LiveReadiness;
+    const obs = rd.observability;
     return {
       ...base,
-      freshnessDays: daysSince(rd.lastUpdated, now),
+      readinessScore: rd.aiReadinessScore ?? null,
+      sessionCount: typeof rd.sessionCount === "number" ? rd.sessionCount : null,
+      activeSessions7d: obs?.activeSessions7d ?? null,
+      activeSessions30d: obs?.activeSessions30d ?? null,
+      completionRate: obs?.completionRate ?? null,
+      uptimeSeconds: obs?.uptimeSeconds ?? null,
+      // Prefer the service's own freshness if it reports one; else derive from lastUpdated.
+      freshnessDays: obs?.freshnessDays ?? daysSince(rd.lastUpdated, now),
       lastUpdated: rd.lastUpdated ?? null,
       lineage: "Assessment sessions",
     };

@@ -57,11 +57,39 @@ describe("deriveObservability — financial (static source: freshness + lineage 
 });
 
 describe("deriveObservability — readiness + unreachable", () => {
-  it("readiness reports freshness from lastUpdated, no runtime metrics", () => {
-    const o = deriveObservability({ id: "diag", name: "Diagnostic", adapterType: "readiness" }, snap({ lastUpdated: "2026-07-17T00:00:00Z" }), NOW);
+  it("readiness reports freshness + score/sessions, no RAG runtime metrics", () => {
+    const o = deriveObservability(
+      { id: "diag", name: "Diagnostic", adapterType: "readiness" },
+      snap({ lastUpdated: "2026-07-17T00:00:00Z", sessionCount: 12, aiReadinessScore: 64 }),
+      NOW,
+    );
     expect(o.freshnessDays).toBe(30);
-    expect(o.p95Ms).toBeNull();
+    expect(o.readinessScore).toBe(64);
+    expect(o.sessionCount).toBe(12);
+    expect(o.p95Ms).toBeNull(); // RAG-only metric stays null for a readiness source
     expect(o.lineage).toBe("Assessment sessions");
+    // R8 operational block absent until the service exposes it → honest nulls.
+    expect(o.uptimeSeconds).toBeNull();
+    expect(o.activeSessions7d).toBeNull();
+    expect(o.completionRate).toBeNull();
+  });
+
+  it("readiness surfaces the R8 observability block when the service reports it", () => {
+    const o = deriveObservability(
+      { id: "diag", name: "Diagnostic", adapterType: "readiness" },
+      snap({
+        lastUpdated: "2026-08-10T00:00:00Z",
+        sessionCount: 20,
+        aiReadinessScore: 71,
+        observability: { uptimeSeconds: 90061, activeSessions7d: 3, activeSessions30d: 9, completionRate: 85, freshnessDays: 2 },
+      }),
+      NOW,
+    );
+    expect(o.uptimeSeconds).toBe(90061);
+    expect(o.activeSessions7d).toBe(3);
+    expect(o.activeSessions30d).toBe(9);
+    expect(o.completionRate).toBe(85);
+    expect(o.freshnessDays).toBe(2); // prefers the service's own freshness over lastUpdated
   });
 
   it("an unreachable product is 'down' with all metrics null", () => {

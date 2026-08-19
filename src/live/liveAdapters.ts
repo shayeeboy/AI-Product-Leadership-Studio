@@ -46,6 +46,16 @@ export interface LiveReadiness {
   riskIndicators: { label: string; severity: "low" | "medium" | "high" }[];
   recommendations: string[];
   lastUpdated: string | null;
+  // R8 — optional honest operational block (uptime + session activity). Present
+  // only once the Diagnostic service exposes it; absent → renders "Not reported".
+  observability?: {
+    uptimeSeconds?: number | null;
+    startedAt?: string | null;
+    activeSessions7d?: number | null;
+    activeSessions30d?: number | null;
+    freshnessDays?: number | null;
+    completionRate?: number | null;
+  };
 }
 
 export interface LiveRagHealth {

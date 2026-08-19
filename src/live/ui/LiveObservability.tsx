@@ -8,6 +8,17 @@ import type { ProductObservability } from "../report/observability";
 const NR = "Not reported";
 const latency = (ms: number | null) => (ms == null ? null : ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`);
 
+// Compact human uptime from seconds (e.g. 3d 4h · 5h 12m · 12m). null → "Not reported".
+function uptime(secs: number | null): string | null {
+  if (secs == null || secs < 0) return null;
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 function freshnessColor(days: number | null) {
   if (days == null) return "text-ink-400";
   if (days <= 7) return "text-emerald-600";
@@ -43,12 +54,27 @@ function ProductCard({ o }: { o: ProductObservability }) {
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-        <Metric label="Latency p95" value={latency(o.p95Ms)} hint="reported" />
-        <Metric label="Latency p50" value={latency(o.p50Ms)} />
-        <Metric label="Cost / query" value={o.costPerQuery != null ? usd(o.costPerQuery) : null} />
-        <Metric label="Volume" value={o.volume != null ? num(o.volume) : null} hint="queries" />
-        <Metric label="Grounded rate" value={o.groundedRate != null ? pct(o.groundedRate) : null} />
-        <Metric label="Error rate" value={o.errorRate != null ? pct(o.errorRate) : null} />
+        {o.adapterType === "readiness" ? (
+          // Readiness tools record no request telemetry — show the honest
+          // equivalents (assessment volume, activity, completion, uptime).
+          <>
+            <Metric label="Readiness score" value={o.readinessScore != null ? `${o.readinessScore}/100` : null} />
+            <Metric label="Assessments" value={o.sessionCount != null ? num(o.sessionCount) : null} hint="recorded" />
+            <Metric label="Completion" value={o.completionRate != null ? pct(o.completionRate) : null} hint="scored" />
+            <Metric label="Active · 7d" value={o.activeSessions7d != null ? num(o.activeSessions7d) : null} hint="sessions" />
+            <Metric label="Active · 30d" value={o.activeSessions30d != null ? num(o.activeSessions30d) : null} hint="sessions" />
+            <Metric label="Uptime" value={uptime(o.uptimeSeconds)} hint="service" />
+          </>
+        ) : (
+          <>
+            <Metric label="Latency p95" value={latency(o.p95Ms)} hint="reported" />
+            <Metric label="Latency p50" value={latency(o.p50Ms)} />
+            <Metric label="Cost / query" value={o.costPerQuery != null ? usd(o.costPerQuery) : null} />
+            <Metric label="Volume" value={o.volume != null ? num(o.volume) : null} hint="queries" />
+            <Metric label="Grounded rate" value={o.groundedRate != null ? pct(o.groundedRate) : null} />
+            <Metric label="Error rate" value={o.errorRate != null ? pct(o.errorRate) : null} />
+          </>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-ink-100 pt-3 text-xs">

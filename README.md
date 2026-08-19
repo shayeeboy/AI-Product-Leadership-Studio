@@ -275,7 +275,7 @@ The **live copy**, through Phase 3, now carries the same groups on the left-rail
 **Deferred (deliberately)**
 - **R14d — Real usage/adoption/billing telemetry.** The last "Not reported" tiles (adoption, cloud spend) would need the apps to expose usage/billing endpoints or a cloud-billing integration; on free tiers the real numbers are ≈ zero, so this is left as a "wire it up when a product has real billing/usage" item rather than fabricated. *(R14a–c — dependency graph + live reliability/cost — shipped; see above and [trade-off #7](#key-trade-off-decisions).)*
 
-> **The entire roadmap is shipped** — Near-term (R3, R4, R9) and Stretch (R7, R8, R6a/b/c) are all done; **only R14d stays deliberately deferred**. The executive views also export an editable **PPTX deck** alongside the PDF, and a super-admin can **view any org read-only** from the Organizations console. The one remaining optional follow-on is **R8 Diagnostic-endpoint deepening** (noted in [`docs/STRETCH-PLAN.md`](docs/STRETCH-PLAN.md); low ROI on a low-traffic tool).
+> **The entire roadmap is shipped** — Near-term (R3, R4, R9) and Stretch (R7, R8, R6a/b/c) are all done; **only R14d stays deliberately deferred**. The executive views also export an editable **PPTX deck** alongside the PDF, and a super-admin can **view any org read-only** from the Organizations console. The last optional follow-on, **R8 Diagnostic-endpoint deepening**, is now also done: the Diagnostic's snapshot exposes an honest operational block (uptime, 7/30-day session activity, completion rate) and the Live Observability card renders readiness-appropriate tiles for it instead of RAG-shaped "Not reported" — no fabricated request telemetry, since the tool records none.
 
 ---
 
