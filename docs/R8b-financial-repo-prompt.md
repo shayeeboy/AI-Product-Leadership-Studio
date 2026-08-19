@@ -36,7 +36,10 @@ Add, in scripts/studio-snapshot.js:
      const series = Object.values(snap.data || {});
      const sources = [...new Set(series.map((v) => v.source).filter(Boolean))];
      const refPeriods = series.map((v) => (v.latest || {}).ref_period).filter(Boolean).sort();
-     const sourceDataAsOf = refPeriods.length ? refPeriods[refPeriods.length - 1] : null; // newest data point
+     // STALEST series (oldest ref period) — the conservative "data is only current to"
+     // bound. Series update on different cadences (daily BoC rates vs quarterly StatCan
+     // ratios); the oldest limits how current the strategic picture really is.
+     const sourceDataAsOf = refPeriods.length ? refPeriods[0] : null;
      const retrievedAts = series.map((v) => v.retrieved_at).filter(Boolean).sort();
      const dataRetrievedAt = retrievedAts.length ? retrievedAts[retrievedAts.length - 1] : null;
      const historyPeriods = Math.max(0, ...series.map((v) => v.n_periods || (v.trend || []).length || 0)) || null;

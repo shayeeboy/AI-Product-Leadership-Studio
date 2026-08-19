@@ -116,11 +116,12 @@ export function deriveObservability(
     const fin = res.data as LiveFinancial;
     const obs = fin.observability;
     const indicators = Array.isArray(fin.indicators) ? fin.indicators : [];
-    // Newest underlying data point (max ref_period) — the honest "data as of",
-    // distinct from when the brief ran. Derivable from indicators when the
-    // generator doesn't state it explicitly.
+    // The STALEST series' ref period (min) — the conservative "data is only current
+    // to" bound, distinct from when the brief ran. Series update on different
+    // cadences (daily rates vs quarterly StatCan ratios); the oldest is what limits
+    // how current the strategic picture really is. Derivable from indicators.
     const refDates = indicators.map((i) => i.refPeriod).filter((d): d is string => !!d).sort();
-    const derivedAsOf = refDates.length ? refDates[refDates.length - 1] : null;
+    const derivedAsOf = refDates.length ? refDates[0] : null;
     const sourceDataAsOf = obs?.sourceDataAsOf ?? derivedAsOf;
     const lag = obs?.sourceDataLagDays ?? daysSince(sourceDataAsOf, new Date(fin.runAt ?? fin.lastUpdated).getTime());
     return {

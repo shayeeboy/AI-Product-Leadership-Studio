@@ -56,8 +56,8 @@ describe("deriveObservability — financial (data agent: coverage + source recen
     );
     expect(o.dataSources).toBe(3); // three distinct providers
     expect(o.indicatorCount).toBe(3);
-    expect(o.sourceDataAsOf).toBe("2026-01-15"); // newest ref period
-    expect(o.sourceDataLagDays).toBe(213); // runAt(Aug 16) − asOf(Jan 15)
+    expect(o.sourceDataAsOf).toBe("2025-10-01"); // STALEST ref period (conservative bound)
+    expect(o.sourceDataLagDays).toBe(319); // runAt(Aug 16 2026) − asOf(Oct 1 2025)
     expect(o.historyPeriods).toBe(12); // max nPeriods
     expect(o.decisionTraceCount).toBe(2);
     expect(o.freshnessDays).toBe(6); // brief freshness since lastUpdated
